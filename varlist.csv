@@ -1,0 +1,63 @@
+df,topic,varname,label,data,select,graph,print,dp,hdr1,hdr2,hdr3,hdr4
+debt,Debt,Year ,Year ,,0,,0,0,,,Year ,---- 
+debt,Debt,GrossDebt,Gross Debt,,1,1,1,1,,Gross,Debt,--------
+debt,Debt,WoOasdi,Public + OASDI,,2,2,2,1,Public,Debt, + OASDI,--------
+debt,Debt,PublicDebt,Public Debt,,3,3,3,1,,Public,Debt,--------
+debt,Debt,GovAccDebt,Govt Account Debt,,4,,4,1,Federal,Gov't,Accounts,--------
+debt,Debt,OasdiDebt,OASDI Debt,,5,,5,1,Social,Security,Debt,--------
+debt,Debt,MediDebt,Medicare Debt,,6,,6,1,,Medicare,Debt,--------
+gdp,Debt,GDP,GDP,,7,,7,1,,,GDP,--------
+gdp,Debt,GDP,GDP,,99,,89,1,,GDP,($bil),--------
+def,Deficit,Year ,Year ,,0,,0,0,,,Year ,---- 
+def,Deficit,Receipts,Receipts,,7,,1,1,,Total,Receipts,--------
+def,Deficit,Outlays,Outlays,,8,,2,1,,Total,Outlays,--------
+def,Deficit,Unified,Unified Deficit,,4,,3,1,,Unified,Deficit,--------
+def,Deficit,PublicDef,Public Deficit,,3,,4,1,,Public,Deficit,--------
+def,Deficit,WoOasdi,Public + OASDI,,2,,5,1,Public,Deficit, + OASDI,--------
+def,Deficit,GrossDef,Gross Deficit,,1,,6,1,,Gross,Deficit,--------
+def,Deficit,OASDISurp,OASDI Surplus,,5,,7,1,,OASDI,Surplus,--------
+def,Deficit,MedicSurp,Medicare Surplus,,6,,8,1,,Medicare,Surplus,--------
+gdp,Deficit,GDP,GDP,,9,,89,1,,,GDP,---------
+gdp,Deficit,GDP,GDP,,99,,89,1,,GDP,($bil),---------
+out,Outlays,Year,Year ,,0,,0,0,,,Year ,---- 
+out,Outlays,Justice,Admin of Justice,,1,,15,3,,Admin of,Justice,--------
+out,Outlays,Agricult,Agriculture,,2,,14,3,,Argri-,culture,--------
+out,Outlays,Allownce,Allowances,,3,,20,3,,Allow-,ances,--------
+out,Outlays,Commerce,Commerce,,4,,7,3,Commerce,&Housing,Credit,--------
+out,Outlays,Communty,Community,,5,,18,3,Community,&Regional,Develop.,---------
+out,Outlays,Defense,Defense,,6,,1,3,,National,Defense,--------
+out,Outlays,Educatn,Education,,7,,9,3,Education,"Training,",Soc Serv,---------
+out,Outlays,Energy,Energy,,8,,19,3,,,Energy,--------
+out,Outlays,Gen_Govt,General Government,,9,,13,3,,General,Gov't,--------
+out,Outlays,Health,Health,,10,,2,3,,,Health,--------
+out,Outlays,Inc_Sec,Income Security,,11,,4,3,,Income,Security,--------
+out,Outlays,Interntl,International,,12,,12,3,,Internatl,Affairs,---------
+out,Outlays,Medicare,Medicare,,13,,3,3,,,Medicare,--------
+out,Outlays,Nat_Res,Natural Resources,,14,,16,3,,Nat'l,Resources,---------
+out,Outlays,Net_Int,Net Interest,,15,,6,3,,Net,Interest,--------
+out,Outlays,Offs_Rec,Offsetting Receipts,,16,,8,3,Undist.,Offsetng,Receipts,--------
+out,Outlays,Science,Science,,17,,17,3,,General,Science,--------
+out,Outlays,Soc_Sec,Social Security,,18,,5,3,,Social,Security,--------
+out,Outlays,Transprt,Transportation,,19,,11,3,,Trans-,portation,---------
+out,Outlays,Veterans,Veterans,,20,,10,3,,Veterans,Benefits,--------
+out,Outlays,OtherOut,Other Outlays,,21,,96,3,,Other,Outlays,--------
+out,Outlays,Outlays,Outlays,,22,,97,3,,Total,Outlays,--------
+out,Outlays,Receipts,Receipts,,23,,98,3,,Total,Receipts,--------
+gdp,Outlays,GDP,GDP,,24,,89,1,,,GDP,---------
+gdp,Outlays,GDP,GDP,,99,,89,1,,GDP,($bil),---------
+,Receipts,Year,Year ,,0,,0,0,,,Year ,---- 
+,Receipts,Individual,Individual Income,,1,,1,1,,Individ,Income,--------
+,Receipts,Corporate,Corporate Income,,2,,2,1,,Corporate,Income,--------
+,Receipts,SocialIns,Social Insurance,,3,,3,1,,Social,Insurance,---------
+,Receipts,SocInsOn,Soc Ins (on-bud),,4,,,1,Social,Insurance,(on-bud),---------
+,Receipts,SocInsOff,Soc Ins (off-bud),,5,,,1,Social,Insurance,(off-bud),---------
+,Receipts,Excise,Excise Taxes,,6,,6,1,,Excise,Tax,--------
+,Receipts,Other,Other Taxes,,7,,7,1,,Other,Receipts,--------
+,Receipts,Receipts,Receipts,,8,,8,1,,Total,Receipts,--------
+,Receipts,ReceiptsOn,Receipts (on-bud),,9,,,1,Total,Receipts,(on-bud),---------
+,Receipts,ReceiptsOff,Receipts (off-bud),,10,, ,1,Total,Receipts,(off-bud),---------
+,Receipts,Outlays,Outlays,,11,,11,1,,Total,Outlays,--------
+,Receipts,GDP,GDP,,12,,12,1,,,GDP,---------
+,Receipts,TopRate,Top Rate,,13,,11,1,Top,Marginal,Rate,--------
+,Receipts,FicaRate,FICA Rate,,14,,11,1,FICA,Tax,Rate,--------
+,Receipts,GDP,GDP,,99,,89,1,,GDP,($bil),---------

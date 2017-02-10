@@ -1,0 +1,165 @@
+Usage
+=====
+
+### 1. Sources ###
+
+This application looks at data from the Historical Tables of the Budget of the United States Government for Fiscal Year 2017.  The budget was released on February 9, 2016 and can be found at https://www.whitehouse.gov/omb/budget/Historicals .  A zip file containing all of the History Tables in XLS format can be downloaded from https://www.whitehouse.gov/sites/default/files/omb/budget/fy2017/assets/hist.zip .
+
+### 2. Topic Select List ###
+
+Currently, the user can use the Topic Select List to select and look at one of the following six topics:
+
+```
+* 1. Debt
+  2. Deficit
+  3. Receipts
+  4. Outlays
+  5. Outlays2
+  6. Outlays3
+
+* selected by default
+```
+
+Note: In this and the following lists, * denotes a default selection.
+
+### 3. Units Select List ###
+
+Four each of the four topics, the user can select any of the following units:
+
+```
+  1. Actual dollars
+  2. Real 2009 dollars
+* 3. Percent of GDP
+```
+
+The application uses the Composite Outlay Deflator from Historical Table 10.1 to convert the actual dollars to real 2009 dollars.  Also, it uses the GDP in the same table to calculate the percent of GDP.
+
+### 4. Graph Variables Select Box ###
+
+For each of the four topics, the user can select any combination of the following variables to graph:
+
+#### Debt Topic #####
+
+```
+*1. Gross Debt
+*2. w/o OASDI         - Gross Debt minus debt owed to OASDI
+*3. Public Debt
+ 4. Govt Account Debt - cumulative surpluses, including interest earnings, that government accounts hold in Treasury securities
+ 5. OASDI Debt	     - Old-Age, Survivors, and Disability Insurance (Social Security)
+ 6. Medicare Debt
+```
+
+#### Deficit Topic #####
+
+```
+* 1. Gross Deficit
+* 2. w/o OASDI	     - Gross Deficit minus deficit from OASDI
+* 3. Public Deficit
+* 4. Unified Deficit
+  5. OASDI Surplus
+  6. Medicare Surplus
+  7. Receipts
+  8. Outlays
+```
+
+#### Receipts Topic #####
+
+```
+*  1. Individual Income
+*  2. Corporate Income
+*  3. Social Insurance
+   4. Soc Ins (on-bud)
+   5. Soc Ins (off-bud)
+*  6. Excise Taxes
+*  7. Other Taxes
+   8. Receipts
+   9. Receipts (on-bud)
+  10. Receipts (off-bud)
+  11. Outlays
+ 
+* selected by default
+```
+
+#### Outlays, Outlays2 and Outlays3 Topics #####
+
+```
+~  1. Admin of Justice
+^  2. Agriculture
+~  3. Allowances
+*  4. Commerce
+~  5. Community
+*  6. Defense
+^  7. Education
+~  8. Energy
+^  9. General Government
+* 10. Health
+* 11. Income Security
+^ 12. International
+* 13. Medicare
+~ 14. Natural Resources
+* 15. Net Interest
+* 16. Offsetting Receipts
+~ 17. Science
+* 18. Social Security
+^ 19. Transportation
+^ 20. Veterans
+* 21. Other Outlays
+  22. Outlays
+  23. Receipts
+  
+* default for Outlays
+^ default for Outlays2
+~ default for Outlays3
+```
+
+As noted above, the starred items (marked by ^ and ~ for Outlays2 and Outlays3) are those that are selected by default.  The selected items will appear in the select box labeled Graph Variables.  By clicking on the lower right corner of this box, the user can bring up a list of other available items.  Clicking on an item in the list will add that item at the point at which the cursor is currently located.  If the cursor is not currently visible, it can be made visible by clicking in the select box and hitting the left and/or right arrows.  Those arrow keys can then be used to position the cursor at the location at which to insert the new item.  In addition, any current item can be deleted by highlighting it and then hitting the delete key.  Using selective insertions and deletions, the graph variables can be selected and placed in any desired order.
+
+If clicking on the lower right fails to bring up the list of available items, the user can delete an item and that should bring the list up.  The user can then reinsert that and any other items from the list.
+
+Finally, the items in the select box only apply to the graph.  Currently, the table underneath the graph will always display the default variables.  However, I plan to change the application to use the items for the table as well.
+
+### 5. Print Variables ###
+
+If checked, those variables selected as Graph Variables are printed, preceded by Year and followed by GDP or Deflator.  If not checked, the default variables shown in the tables above are those that are printed.
+
+### 6. X From,To,Step,Tick Text Box ###
+
+The user can enter an optional From, To, Step, and Tick value to use for the X-axis.  The user can enter one, two, three, or four values, all separated by commas.  If present, the first value will be the minimum of the x-axis and the second value will be the maximum.  If present, the third value will be used as the increment at which major grid lines and labels will be placed on the x-axis.  Finally if present, the fourth value will be used as the increment at which to place minor grid lines which do not have labels on the x-axis.  This number is typically a factor of the step value, such as a value equal to half the step value.
+
+### 7. Y From,To,Step,Tick Text Box ###
+
+This works exactly like the X From,To,Step,Tick Text Box except that it applies to the y-axis.
+
+### 8. Years to Measure Growth ###
+
+If greater than zero, the percent growth over the specified number of years is displayed for all variables.  If zero or less, this setting is ignored.
+
+### 9. Theme ###
+
+The user can use this to set any of the following themes which are available with the ggplot2 base system:
+
+```
+  1. theme_gray80
+* 2. theme_gray85
+  3. theme_gray
+  4. theme_bw
+  5. theme_classic
+  6. theme_dark
+  7. theme_light
+  8. theme_linedraw
+  9. theme_minimal")
+```
+
+Theme-gray85 is the default theme and theme_bw is a common alternative.  Theme-light is useful if the grid lines are not visible on a very bright screen.
+
+### 10. Color ###
+
+This specifies the colors to be used for the graphic symbols of the variables in the order that they appear in Graph Variables select box.  The valid color names can be seen at http://sape.inf.usi.ch/quick-reference/ggplot2/colour .
+
+### 11. Shape ###
+
+This specifies the shapes to be used for the graphic symbols of the variables in the order that they appear in Graph Variables select box.  The valid numbers and their corresponding symbols can be seen at http://www.cookbook-r.com/Graphs/Shapes_and_line_types/ .
+
+### 12. Other Information ###
+
+Links to graphs and tables for debt and deficits from prior U.S. budgets can be found at http://www.econdataus.com/adebt.html .  For outlays and receipts, graphs and tables from prior budgets can be found at http://www.econdataus.com/aoutlays.html and http://www.econdataus.com/areceipt.html , respectively.

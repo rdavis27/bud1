@@ -1,0 +1,9 @@
+name: bud1
+account: camfin
+server: shinyapps.io
+appId: 87782
+bundleId: 390181
+url: https://camfin.shinyapps.io/bud1/
+when: 1457427380.31576
+asMultiple: FALSE
+asStatic: FALSE

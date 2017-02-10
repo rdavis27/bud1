@@ -1,0 +1,9 @@
+name: bud1
+account: econdata
+server: shinyapps.io
+appId: 86929
+bundleId: 450872
+url: https://econdata.shinyapps.io/bud1/
+when: 1463198695.61368
+asMultiple: FALSE
+asStatic: FALSE

@@ -1,16 +1,17 @@
+fyear <- 2018
 shinyUI(fluidPage(
     #comment out scripts for testing
     tags$head(includeScript("analytics.js")),
     tags$head(includeScript("statcount.js")),
-    headerPanel("Budget of the United States Government, FY 2017"),
+    headerPanel(paste0("Budget of the United States Government, FY ", fyear)),
     sidebarPanel(
         width = 2,
         selectInput("topic", "Topic",
                     choices  = c("Debt", "Deficit", "Receipts", "Outlays", "Outlays2", "Outlays3"),
-                    selected =   "Debt"), 
+                    selected =   "Debt"),
         selectInput("xunits", "Units",
                     choices  = c("Actual Dollars","Real Dollars","Percent of GDP"),
-                    selected =                                   "Percent of GDP"), 
+                    selected =                                   "Percent of GDP"),
         selectInput("graph", "Graph Variables",
                     choices  = c("GROSS_DEBT","PUBLIC_DEBT","GOV_ACC_DEBT","OASDI_DEBT","MEDI_DEBT"),
                     selected = c("GROSS_DEBT","PUBLIC_DEBT"), multiple = TRUE),

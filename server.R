@@ -1,8 +1,10 @@
 library(ggplot2)
 library(reshape)
 library(stringr)
+fyear <- 2018
 in_shinyapps <- FALSE # fileEncoding="latin1" if TRUE
 options(width = 200)
+options(max.print = 2000)
 #options(error=recover)
 
 shinyServer(
@@ -20,27 +22,27 @@ shinyServer(
             load_data()
             if (input$topic == "Deficit"){
                 main = "Selected Surpluses or Deficits(-)"
-                xlab = "Source: U.S. Budget, FY 2017, Historical Tables 1.1, 7.1, 13.1"
+                xlab = paste0("Source: U.S. Budget, FY ", fyear, ", Historical Tables 1.1, 7.1, 13.1")
             }
             else if (input$topic == "Outlays"){
                 main = "Federal Outlays"
-                xlab = "Source: U.S. Budget, FY 2017, Historical Tables 1.1, 3.1, 10.1"
+                xlab = paste0("Source: U.S. Budget, FY ", fyear, ", Historical Tables 1.1, 3.1, 10.1")
             }
             else if (input$topic == "Outlays2"){
                 main = "Other Federal Outlays"
-                xlab = "Source: U.S. Budget, FY 2017, Historical Tables 1.1, 3.1, 10.1"
+                xlab = paste0("Source: U.S. Budget, FY ", fyear, ", Historical Tables 1.1, 3.1, 10.1")
             }
             else if (input$topic == "Outlays3"){
                 main = "Other Federal Outlays"
-                xlab = "Source: U.S. Budget, FY 2017, Historical Tables 1.1, 3.1, 10.1"
+                xlab = paste0("Source: U.S. Budget, FY ", fyear, ", Historical Tables 1.1, 3.1, 10.1")
             }
             else if (input$topic == "Receipts"){
                 main = "Federal Receipts"
-                xlab = "Source: U.S. Budget, FY 2017, Historical Tables 1.1, 2.1, 10.1"
+                xlab = paste0("Source: U.S. Budget, FY ", fyear, ", Historical Tables 1.1, 2.1, 10.1")
             }
             else{
                 main = "Federal Debt"
-                xlab = "Source: U.S. Budget, FY 2017, Historical Tables 7.1, 10.1, 13.1"
+                xlab = paste0("Source: U.S. Budget, FY ", fyear, ", Historical Tables 7.1, 10.1, 13.1")
             }
             ylab = "Percent of GDP"
             num = 100
@@ -131,6 +133,7 @@ shinyServer(
                     geom_line(aes(color=variable), size=1, alpha=0.7) +
                     geom_point(aes(color=variable, shape=variable), size=3, alpha=0.7) +
                     ggtitle(main) +
+                    #theme(plot.title = element_text(hjust = 0.5)) +
                     xlab(xlab) + ylab(ylab) +
                     geom_vline(xintercept=min_est_yr-0.5) +
                     annotate("text", x=min_est_yr, y=miny, label="Actual    Estimate") +
@@ -181,11 +184,11 @@ shinyServer(
                 if (input$theme == "theme_gray85"){
                     gg <- gg + theme(panel.background = element_rect(fill = "gray85"))
                     gg <- gg + theme(legend.key = element_rect(fill = "gray85"))
-                } 
+                }
                 else if (input$theme == "theme_gray80"){
                     gg <- gg + theme(panel.background = element_rect(fill = "gray80"))
                     gg <- gg + theme(legend.key = element_rect(fill = "gray80"))
-                } 
+                }
                 #gg <- gg + theme(panel.background = element_rect(fill = "lightcyan1")) #TEST
                 #gg <- gg + theme(panel.border = element_rect(fill = NA, color = "black")) #TEST
                 #gg <- gg + theme(panel.grid.major = element_line(colour = "grey50")) #TEST
@@ -256,7 +259,7 @@ shinyServer(
             div = gdp$GDP
             adj = gdp$GDP
             dpz = 1
-            
+
             if (input$xunits == "Actual Dollars"){
                 mhdr[2,] <-           "(billions of dollars)"
                 ylab = "Billions of Dollars"
@@ -422,7 +425,7 @@ load_debt <- function(){
     debt$WoOasdi   <<- debt$PublicDebt + debt$OasdiDebt
     debt           <<- debt[,c(1,2,7,3:6)]
     debt$GDP       <<- gdp$GDP
-    
+
     def$PublicDef <<- c(NA, -diff(debt$PublicDebt))
     def$WoOasdi   <<- c(NA, -diff(debt$PublicDebt + debt$OasdiDebt))
     def$GrossDef  <<- c(NA, -diff(debt$GrossDebt))
@@ -506,7 +509,7 @@ proc_table <- function(tt, cskip){
     est_i <- grep(" estimate", tt$SYEAR)
     min_est <<- min(est_i)
     max_est <<- max(est_i)
-    if (max_est > 0) tt <- tt[1:max_est,] # remove rows after last estimate   
+    if (max_est > 0) tt <- tt[1:max_est,] # remove rows after last estimate
     tt$SYEAR <- sub(" estimate", "", tt$SYEAR)
     min_est_yr <<- as.integer(tt$SYEAR[min_est])
     max_est_yr <<- as.integer(tt$SYEAR[max_est])

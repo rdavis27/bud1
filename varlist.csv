@@ -57,7 +57,7 @@ gdp,Outlays,GDP,GDP,,99,,89,1,,GDP,($bil),---------
 ,Receipts,ReceiptsOn,Receipts (on-bud),,9,,,1,Total,Receipts,(on-bud),---------
 ,Receipts,ReceiptsOff,Receipts (off-bud),,10,, ,1,Total,Receipts,(off-bud),---------
 ,Receipts,Outlays,Outlays,,11,,11,1,,Total,Outlays,--------
-,Receipts,GDP,GDP,,12,,12,1,,,GDP,---------
-,Receipts,TopRate,Top Rate,,13,,11,1,Top,Marginal,Rate,--------
-,Receipts,FicaRate,FICA Rate,,14,,11,1,FICA,Tax,Rate,--------
+,Receipts,TopRate,Top Rate,,12,,12,1,Top,Marginal,Rate,--------
+,Receipts,FicaRate,FICA Rate,,13,,13,1,FICA,Tax,Rate,--------
+,Receipts,GDP,GDP,,14,,14,1,,,GDP,---------
 ,Receipts,GDP,GDP,,99,,89,1,,GDP,($bil),---------

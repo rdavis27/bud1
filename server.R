@@ -1,7 +1,7 @@
 library(ggplot2)
 library(reshape)
 library(stringr)
-fyear <- 2018
+fyear <- 2019
 in_shinyapps <- FALSE # fileEncoding="latin1" if TRUE
 options(width = 200)
 options(max.print = 2000)
@@ -404,7 +404,7 @@ load_data <- function(){
 }
 load_gdp <- function(){
     #print("========== load_gdp ==========")
-    t10 <- load_table("hist10z1.csv", 4, 0)
+    t10 <- load_table("hist10z1.csv", 14, 0)
     gdp <<- create_num_table(t10, c(1:4), c("YEAR","GDP","GDP_CHAINED","DEFLATOR"), 1)
     return(gdp)
 }
@@ -413,9 +413,9 @@ load_debt <- function(){
     #if (!exists("gdp")) load_gdp()
     t1  <- load_table("hist01z1.csv", 3, 41)
     def <<- create_num_table(t1, c(1,2,3,4), c("Year","Receipts","Outlays","Unified"), 1000)
-    t7  <- load_table("hist07z1.csv", 3, 0)
+    t7  <- load_table("hist07z1.csv", 5, 0)
     debt <<- create_num_table(t7, c(1,2,4,3), c("Year","GrossDebt","PublicDebt","GovAccDebt"), 1000)
-    t10 <- load_table("hist10z1.csv", 4, 0)
+    t10 <- load_table("hist10z1.csv", 14, 0)
     gdp <<- create_num_table(t10, c(1:4), c("YEAR","GDP","GDP_CHAINED","DEFLATOR"), 1)
     t13 <- load_transtable("hist13z1.csv", 2, 4)
     ss  <<- create_num_table(t13, c(1,20,23,44,47,74,78,102,105), c("YEAR","OAS_SURPLUS","OAS_BAL",

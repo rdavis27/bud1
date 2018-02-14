@@ -1,4 +1,4 @@
-fyear <- 2018
+fyear <- 2019
 shinyUI(fluidPage(
     #comment out scripts for testing
     tags$head(includeScript("analytics.js")),

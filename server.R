@@ -1,6 +1,7 @@
 library(ggplot2)
 library(reshape)
 library(stringr)
+library(readxl)
 fyear <- 2019
 in_shinyapps <- FALSE # fileEncoding="latin1" if TRUE
 options(width = 200)
@@ -404,20 +405,20 @@ load_data <- function(){
 }
 load_gdp <- function(){
     #print("========== load_gdp ==========")
-    t10 <- load_table("hist10z1.csv", 14, 0)
+    t10 <- load_table("hist10z1.xlsx", 14, 0)
     gdp <<- create_num_table(t10, c(1:4), c("YEAR","GDP","GDP_CHAINED","DEFLATOR"), 1)
     return(gdp)
 }
 load_debt <- function(){
     #print("========== load_debt ==========")
     #if (!exists("gdp")) load_gdp()
-    t1  <- load_table("hist01z1.csv", 3, 41)
+    t1  <- load_table("hist01z1.xlsx", 3, 41)
     def <<- create_num_table(t1, c(1,2,3,4), c("Year","Receipts","Outlays","Unified"), 1000)
-    t7  <- load_table("hist07z1.csv", 5, 0)
+    t7  <- load_table("hist07z1.xlsx", 3, 0) # skip was 5 for csv
     debt <<- create_num_table(t7, c(1,2,4,3), c("Year","GrossDebt","PublicDebt","GovAccDebt"), 1000)
-    t10 <- load_table("hist10z1.csv", 14, 0)
+    t10 <- load_table("hist10z1.xlsx", 4, 0) # skip was 14 for csv
     gdp <<- create_num_table(t10, c(1:4), c("YEAR","GDP","GDP_CHAINED","DEFLATOR"), 1)
-    t13 <- load_transtable("hist13z1.csv", 2, 4)
+    t13 <- load_transtable("hist13z1.xlsx", 2, 4)
     ss  <<- create_num_table(t13, c(1,20,23,44,47,74,78,102,105), c("YEAR","OAS_SURPLUS","OAS_BAL",
                                                                    "DI_SURPLUS","DI_BAL","HI_SURPLUS","HI_BAL","SMI_SURPLUS","SMI_BAL"), 1000)
     debt$OasdiDebt <<- ss$OAS_BAL + ss$DI_BAL
@@ -444,7 +445,7 @@ load_outlays <- function(){
         "PHYS_RES","Energy",  "Nat_Res", "Commerce","Cmrc_on", "Cmrc_off","Transprt","Communty","Net_Int", "Int_on",
         "Int_off", "OTH_FUNC","Interntl","Science", "Agricult","Justice", "Gen_Govt","Allownce","Offs_Rec","Offs_on",
         "Offs_off","Outlays", "Outly_on","Outly_of")
-    t3  <- load_transtable("hist03z1.csv", 1, 0)
+    t3  <- load_transtable("hist03z1.xlsx", 1, 0)
     out <<- create_num_table(t3, c(1,3:36), out_names, 1000)
     OtherOut <- out$Outlays - (out$Defense + out$Health + out$Medicare + out$Inc_Sec +
                             out$Soc_Sec + out$Net_Int + out$Commerce + out$Offs_Rec)
@@ -463,7 +464,7 @@ load_receipts <- function(){
     rec_names <- c("Year",
                    "Individual", "Corporate", "SocialIns", "SocInsOn",  "SocInsOff",
                    "Excise","Other","Receipts","ReceiptsOn","ReceiptsOff")
-    t2  <- load_table("hist02z1.csv", 3, 6) # skip to 1-line header, then skip to 1940
+    t2  <- load_table("hist02z1.xlsx", 3, 6) # skip to 1-line header, then skip to 1940
     rec <<- create_num_table(t2, c(1:11), rec_names, 1000)
     rec$Outlays <<- def$Outlays
     rates <- read.csv("taxrates.csv", skip = 3, stringsAsFactors = FALSE)
@@ -473,24 +474,24 @@ load_receipts <- function(){
     return(rec)
 }
 # Load normal table (one year per row) and call proc_table
-load_table <- function(csvfile, rskip, cskip){
-    #print(paste0("READ ", csvfile))
+load_table <- function(file, rskip, cskip){
+    #print(paste0("READ ", file))
     if (in_shinyapps){
-        tt <- read.csv(csvfile, skip = rskip, stringsAsFactors = FALSE, fileEncoding="latin1")
+        tt <- read_excel(file, skip = rskip, fileEncoding="latin1") # implied stringsAsFactors = FALSE 
     }
     else{
-        tt <- read.csv(csvfile, skip = rskip, stringsAsFactors = FALSE)
+        tt <- read_excel(file, skip = rskip) # implied stringsAsFactors = FALSE
     }
     proc_table(tt, cskip)
 }
 # Load transposed table (one year per column), transpose and call proc_table
-load_transtable <- function(csvfile, rskip, cskip){
-    #print(paste("READ", csvfile))
+load_transtable <- function(file, rskip, cskip){
+    #print(paste("READ", file))
     if (in_shinyapps){
-        tt <- read.csv(csvfile, skip = rskip, stringsAsFactors = FALSE, header = FALSE, fileEncoding="latin1")
+        tt <- read_excel(file, skip = rskip, col_names = FALSE, fileEncoding="latin1") # implied stringsAsFactors = FALSE
     }
     else{
-        tt <- read.csv(csvfile, skip = rskip, stringsAsFactors = FALSE, header = FALSE)
+        tt <- read_excel(file, skip = rskip, col_names = FALSE) # implied stringsAsFactors = FALSE
     }
     uu <- as.data.frame(t(tt[,-1]), stringsAsFactors = FALSE)
     colnames(uu) <- tt[,1]

@@ -2,7 +2,6 @@ library(ggplot2)
 library(reshape)
 library(stringr)
 library(readxl)
-fyear <- 2019
 in_shinyapps <- FALSE # fileEncoding="latin1" if TRUE
 options(width = 200)
 options(max.print = 2000)
@@ -23,27 +22,27 @@ shinyServer(
             load_data()
             if (input$topic == "Deficit"){
                 main = "Selected Surpluses or Deficits(-)"
-                xlab = paste0("Source: U.S. Budget, FY ", fyear, ", Historical Tables 1.1, 7.1, 13.1")
+                xlab = paste0("Source: U.S. Budget, FY ", input$year1, ", Historical Tables 1.1, 7.1, 13.1")
             }
             else if (input$topic == "Outlays"){
                 main = "Federal Outlays"
-                xlab = paste0("Source: U.S. Budget, FY ", fyear, ", Historical Tables 1.1, 3.1, 10.1")
+                xlab = paste0("Source: U.S. Budget, FY ", input$year1, ", Historical Tables 1.1, 3.1, 10.1")
             }
             else if (input$topic == "Outlays2"){
                 main = "Other Federal Outlays"
-                xlab = paste0("Source: U.S. Budget, FY ", fyear, ", Historical Tables 1.1, 3.1, 10.1")
+                xlab = paste0("Source: U.S. Budget, FY ", input$year1, ", Historical Tables 1.1, 3.1, 10.1")
             }
             else if (input$topic == "Outlays3"){
                 main = "Other Federal Outlays"
-                xlab = paste0("Source: U.S. Budget, FY ", fyear, ", Historical Tables 1.1, 3.1, 10.1")
+                xlab = paste0("Source: U.S. Budget, FY ", input$year1, ", Historical Tables 1.1, 3.1, 10.1")
             }
             else if (input$topic == "Receipts"){
                 main = "Federal Receipts"
-                xlab = paste0("Source: U.S. Budget, FY ", fyear, ", Historical Tables 1.1, 2.1, 10.1")
+                xlab = paste0("Source: U.S. Budget, FY ", input$year1, ", Historical Tables 1.1, 2.1, 10.1")
             }
             else{
                 main = "Federal Debt"
-                xlab = paste0("Source: U.S. Budget, FY ", fyear, ", Historical Tables 7.1, 10.1, 13.1")
+                xlab = paste0("Source: U.S. Budget, FY ", input$year1, ", Historical Tables 7.1, 10.1, 13.1")
             }
             ylab = "Percent of GDP"
             num = 100
@@ -382,240 +381,246 @@ shinyServer(
             check_url(input, session)
             return(updated)
         }
+        center_print <- function(hh, line){
+            hhwid <- sum(nchar(hh)+1)-1
+            ttwid <- nchar(line)
+            #pad <- truncate(as.integer((hhwid - ttwid) / 2))
+            pad <- as.integer((hhwid - ttwid) / 2)
+            if (pad < 0) pad = 0;
+            #print(str_pad(line, ttwid + pad, "left"), row.names = FALSE, right = FALSE)
+            cat(str_pad(line, ttwid + pad, "left"), "\n")
+        }
+        # Load normal table (one year per row) and call proc_table
+        load_data <- function(){
+            xls_ext <<- "xls"
+            if (as.numeric(input$year1) >= 2019) xls_ext <<- "xlsx"
+            if (!exists("gdp$DEFLATOR")) load_gdp()
+            if (!exists("debt$MediDebt")) load_debt()
+            if (!exists("def$MedicSurp")) load_debt()
+            if (!exists("ss$SMI_BAL")) load_debt()
+            if (!exists("out$Receipts")) load_outlays()
+            if (!exists("rec$Outlays")) load_receipts()
+            return(gdp)
+        }
+        load_gdp <- function(){
+            #print("========== load_gdp ==========")
+            t10 <- load_table(paste0(input$year1,"/hist10z1.",xls_ext), 14, 0)
+            gdp <<- create_num_table(t10, c(1:4), c("YEAR","GDP","GDP_CHAINED","DEFLATOR"), 1)
+            return(gdp)
+        }
+        load_debt <- function(){
+            #print("========== load_debt ==========")
+            #if (!exists("gdp")) load_gdp()
+            t1  <- load_table(paste0(input$year1,"/hist01z1.",xls_ext), 3, 41)
+            def <<- create_num_table(t1, c(1,2,3,4), c("Year","Receipts","Outlays","Unified"), 1000)
+            t7  <- load_table(paste0(input$year1,"/hist07z1.",xls_ext), 3, 0) # skip was 5 for csv
+            debt <<- create_num_table(t7, c(1,2,4,3), c("Year","GrossDebt","PublicDebt","GovAccDebt"), 1000)
+            t10 <- load_table(paste0(input$year1,"/hist10z1.",xls_ext), 4, 0) # skip was 14 for csv
+            gdp <<- create_num_table(t10, c(1:4), c("YEAR","GDP","GDP_CHAINED","DEFLATOR"), 1)
+            t13 <- load_transtable(paste0(input$year1,"/hist13z1.",xls_ext), 2, 4)
+            ss  <<- create_num_table(t13, c(1,20,23,44,47,74,78,102,105), c("YEAR","OAS_SURPLUS","OAS_BAL",
+                                                                            "DI_SURPLUS","DI_BAL","HI_SURPLUS","HI_BAL","SMI_SURPLUS","SMI_BAL"), 1000)
+            debt$OasdiDebt <<- ss$OAS_BAL + ss$DI_BAL
+            debt$MediDebt  <<- ss$HI_BAL + ss$SMI_BAL
+            debt$WoOasdi   <<- debt$PublicDebt + debt$OasdiDebt
+            debt           <<- debt[,c(1,2,7,3:6)]
+            debt$GDP       <<- gdp$GDP
+            
+            def$PublicDef <<- c(NA, -diff(debt$PublicDebt))
+            def$WoOasdi   <<- c(NA, -diff(debt$PublicDebt + debt$OasdiDebt))
+            def$GrossDef  <<- c(NA, -diff(debt$GrossDebt))
+            def$OASDISurp <<- ss$OAS_SURPLUS + ss$DI_SURPLUS
+            def$MedicSurp <<- ss$HI_SURPLUS + ss$SMI_SURPLUS
+            def           <<- def[,c(1,7:4,8,9,2,3)]
+            def$GDP       <<- gdp$GDP
+            return(debt)
+        }
+        load_outlays <- function(){
+            #print("========== load_outlays ==========")
+            if (!exists("gdp")) load_gdp()
+            if (!exists("def")) load_debt()
+            out_names <- c("Year",
+                           "Defense", "HUM_RES", "Educatn", "Health",  "Medicare","Inc_Sec", "Soc_Sec", "SS_on",   "SS_off",  "Veterans",
+                           "PHYS_RES","Energy",  "Nat_Res", "Commerce","Cmrc_on", "Cmrc_off","Transprt","Communty","Net_Int", "Int_on",
+                           "Int_off", "OTH_FUNC","Interntl","Science", "Agricult","Justice", "Gen_Govt","Allownce","Offs_Rec","Offs_on",
+                           "Offs_off","Outlays", "Outly_on","Outly_of")
+            t3  <- load_transtable(paste0(input$year1,"/hist03z1.",xls_ext), 1, 0)
+            out <<- create_num_table(t3, c(1,3:36), out_names, 1000)
+            OtherOut <- out$Outlays - (out$Defense + out$Health + out$Medicare + out$Inc_Sec +
+                                           out$Soc_Sec + out$Net_Int + out$Commerce + out$Offs_Rec)
+            out <<- with(out, data.frame(Year, Justice, Agricult, Allownce, Commerce, Communty,
+                                         Defense, Educatn, Energy, Gen_Govt, Health,
+                                         Inc_Sec, Interntl, Medicare, Nat_Res, Net_Int,
+                                         Offs_Rec, Science, Soc_Sec, Transprt, Veterans,
+                                         OtherOut, Outlays, "Receipts"=def$Receipts))
+            out$GDP <<- gdp$GDP
+            return(out)
+        }
+        load_receipts <- function(){
+            #print("========== load_receipts ==========")
+            if (!exists("gdp")) load_gdp()
+            if (!exists("def")) load_debt()
+            rec_names <- c("Year",
+                           "Individual", "Corporate", "SocialIns", "SocInsOn",  "SocInsOff",
+                           "Excise","Other","Receipts","ReceiptsOn","ReceiptsOff")
+            t2  <- load_table(paste0(input$year1,"/hist02z1.",xls_ext), 3, 6) # skip to 1-line header, then skip to 1940
+            rec <<- create_num_table(t2, c(1:11), rec_names, 1000)
+            rec$Outlays <<- def$Outlays
+            rates <- read.csv("taxrates.csv", skip = 3, stringsAsFactors = FALSE)
+            rates <- rates[rates$Year >= 1940,]
+            rates <- rates[1:NROW(rec),]
+            rec$TopRate  <<- rates$TopRate
+            rec$FicaRate <<- rates$FicaRate
+            #rec$TopRate  <<- rates$TopRate[rates$Year >= 1940]
+            #rec$FicaRate <<- rates$FicaRate[rates$Year >= 1940]
+            rec$GDP       <<- gdp$GDP
+            return(rec)
+        }
+        # Load normal table (one year per row) and call proc_table
+        load_table <- function(file, rskip, cskip){
+            #print(paste0("READ ", file))
+            if (in_shinyapps){
+                tt <- read_excel(file, skip = rskip, fileEncoding="latin1") # implied stringsAsFactors = FALSE 
+            }
+            else{
+                tt <- read_excel(file, skip = rskip) # implied stringsAsFactors = FALSE
+            }
+            proc_table(tt, cskip)
+        }
+        # Load transposed table (one year per column), transpose and call proc_table
+        load_transtable <- function(file, rskip, cskip){
+            #print(paste("READ", file))
+            if (in_shinyapps){
+                tt <- read_excel(file, skip = rskip, col_names = FALSE, fileEncoding="latin1") # implied stringsAsFactors = FALSE
+            }
+            else{
+                tt <- read_excel(file, skip = rskip, col_names = FALSE) # implied stringsAsFactors = FALSE
+            }
+            uu <- as.data.frame(t(tt[,-1]), stringsAsFactors = FALSE)
+            colnames(uu) <- tt[,1]
+            proc_table(uu, cskip)
+        }
+        # Skip first rskip rows (leaving one header row) and first cskip years
+        # Name first column SYEAR and remove TQ row
+        # Remove " estimate" from SYEAR and store index of first estimate in est_yr1
+        # If there were estimates, remove all rows following estimates
+        proc_table <- function(tt, cskip){
+            if (cskip > 0){
+                tt <- tt[cskip+1:nrow(tt),]
+            }
+            colnames(tt)[1] <- "SYEAR"
+            tt <- tt[tt$SYEAR != "TQ",]
+            est_i <- grep(" estimate", tt$SYEAR)
+            min_est <<- min(est_i)
+            max_est <<- max(est_i)
+            if (max_est > 0) tt <- tt[1:max_est,] # remove rows after last estimate
+            tt$SYEAR <- sub(" estimate", "", tt$SYEAR)
+            min_est_yr <<- as.integer(tt$SYEAR[min_est])
+            max_est_yr <<- as.integer(tt$SYEAR[max_est])
+            tt$YEAR <- as.integer(tt$SYEAR)
+            #print(str(tt))
+            return(tt)
+        }
+        create_num_table <- function(tt, indices, names, div){
+            #print("========== RUN create_num_table ==========")
+            uu <- data.frame(tt[1])
+            for (i in 2:length(indices)){
+                indx <- indices[i]
+                uu[,names[i]] <- tt[indx]
+                uu[,names[i]] <- gsub("..........", "0", uu[,names[i]], fixed = TRUE)
+                uu[,names[i]] <- as.numeric(gsub(",", "", uu[,names[i]])) / div
+            }
+            uu[,1] <- as.numeric(uu[,1])
+            colnames(uu)[1] <- names[1]
+            return(uu)
+        }
+        adjust_num_table <- function(tt, num, div, name){
+            uu <- tt
+            for (i in 2:ncol(tt)){
+                uu[,i] <- tt[,i] * num / div
+            }
+            uu[name] <- div
+            return(uu)
+        }
+        create_str_table <- function(hh, tt, dp, num, div, adj, growth){
+            #print("========== RUN create_str_table ==========")
+            uu <- tt
+            for (i in 2:ncol(tt)){
+                uu[,i] <- num * tt[,i] / div
+            }
+            uu$ADJ <- adj
+            if (growth > 0){
+                start = 1 + growth
+                div <- div[c(start:nrow(uu))]
+                adj <- adj[c(start:nrow(uu))]
+                min_est <- min_est - growth
+                max_est <- max_est - growth
+                uu <- calc_growth(uu, growth)
+            }
+            for (i in 2:ncol(tt)){
+                uu[,i] <- format(round(uu[,i], digits = dp[i]), nsmall = dp[i], big.mark = ",")
+            }
+            i <- ncol(uu)
+            uu[,ncol(uu)] <- format(round(adj, digits = dp[i]), nsmall = dp[i], big.mark = ",")
+            uu[1:(min_est-1),1] <- paste0(uu[1:(min_est-1),1], " ")
+            uu[min_est:max_est,1] <- paste0(uu[min_est:max_est,1], "*")
+            colnames(hh) <- colnames(uu) # REMOVE IF POSSIBLE
+            uu <- rbind(hh, uu)
+            for (i in 1:ncol(uu)){
+                colnames(uu)[i] <- " "
+            }
+            return(uu)
+        }
+        calc_growth <- function(dd, lg){
+            if (lg <= 0){
+                return(dd)
+            }
+            ee <- dd[c((1+lg):nrow(dd)),]
+            for (i in 2:ncol(dd)){
+                num <- 100 * diff(dd[,i], lag = lg)
+                den <- dd[c(1:(nrow(dd)-lg)),i]
+                ee[,i] <- num / den
+            }
+            return(ee)
+        }
+        check_url <- function(input, session){
+            query <- parseQueryString(session$clientData$url_search)
+            #for (i in 1:(length(reactiveValuesToList(input)))){
+            #    nameval = names(reactiveValuesToList(input)[i])
+            #    print(paste(i, nameval, query[[nameval]]))
+            #}
+            if (input$ignore == FALSE){
+                if (!is.null(query[['topic']])){
+                    updateSelectInput(session, "topic", selected = query[['topic']])
+                }
+                if (!is.null(query[['xunits']])){
+                    updateSelectInput(session, "xunits", selected = query[['xunits']])
+                }
+                if (!is.null(query[['print']])){
+                    updateCheckboxInput(session, "print", value = query[['print']])
+                }
+                if (!is.null(query[['xscale']])){
+                    updateTextInput(session, "xscale", value = query[['xscale']])
+                }
+                if (!is.null(query[['yscale']])){
+                    updateTextInput(session, "yscale", value = query[['yscale']])
+                }
+                if (!is.null(query[['growth']])){
+                    updateNumericInput(session, "growth", value = as.numeric(query[['growth']]))
+                }
+                if (!is.null(query[['theme']])){
+                    updateSelectInput(session, "theme", selected = query[['theme']])
+                }
+                if (!is.null(query[['color']])){
+                    updateTextInput(session, "color", value = query[['color']])
+                }
+                if (!is.null(query[['shape']])){
+                    updateTextInput(session, "shape", value = query[['shape']])
+                }
+                if (!is.null(query[['graph']])){
+                    updateSelectInput(session, "graph", selected = unlist(strsplit(query[['graph']],",")))
+                }
+            }
+        }
     }
 )
-center_print <- function(hh, line){
-    hhwid <- sum(nchar(hh)+1)-1
-    ttwid <- nchar(line)
-    #pad <- truncate(as.integer((hhwid - ttwid) / 2))
-    pad <- as.integer((hhwid - ttwid) / 2)
-    if (pad < 0) pad = 0;
-    #print(str_pad(line, ttwid + pad, "left"), row.names = FALSE, right = FALSE)
-    cat(str_pad(line, ttwid + pad, "left"), "\n")
-}
-# Load normal table (one year per row) and call proc_table
-load_data <- function(){
-    if (!exists("gdp$DEFLATOR")) load_gdp()
-    if (!exists("debt$MediDebt")) load_debt()
-    if (!exists("def$MedicSurp")) load_debt()
-    if (!exists("ss$SMI_BAL")) load_debt()
-    if (!exists("out$Receipts")) load_outlays()
-    if (!exists("rec$Outlays")) load_receipts()
-    return(gdp)
-}
-load_gdp <- function(){
-    #print("========== load_gdp ==========")
-    t10 <- load_table("hist10z1.xlsx", 14, 0)
-    gdp <<- create_num_table(t10, c(1:4), c("YEAR","GDP","GDP_CHAINED","DEFLATOR"), 1)
-    return(gdp)
-}
-load_debt <- function(){
-    #print("========== load_debt ==========")
-    #if (!exists("gdp")) load_gdp()
-    t1  <- load_table("hist01z1.xlsx", 3, 41)
-    def <<- create_num_table(t1, c(1,2,3,4), c("Year","Receipts","Outlays","Unified"), 1000)
-    t7  <- load_table("hist07z1.xlsx", 3, 0) # skip was 5 for csv
-    debt <<- create_num_table(t7, c(1,2,4,3), c("Year","GrossDebt","PublicDebt","GovAccDebt"), 1000)
-    t10 <- load_table("hist10z1.xlsx", 4, 0) # skip was 14 for csv
-    gdp <<- create_num_table(t10, c(1:4), c("YEAR","GDP","GDP_CHAINED","DEFLATOR"), 1)
-    t13 <- load_transtable("hist13z1.xlsx", 2, 4)
-    ss  <<- create_num_table(t13, c(1,20,23,44,47,74,78,102,105), c("YEAR","OAS_SURPLUS","OAS_BAL",
-                                                                   "DI_SURPLUS","DI_BAL","HI_SURPLUS","HI_BAL","SMI_SURPLUS","SMI_BAL"), 1000)
-    debt$OasdiDebt <<- ss$OAS_BAL + ss$DI_BAL
-    debt$MediDebt  <<- ss$HI_BAL + ss$SMI_BAL
-    debt$WoOasdi   <<- debt$PublicDebt + debt$OasdiDebt
-    debt           <<- debt[,c(1,2,7,3:6)]
-    debt$GDP       <<- gdp$GDP
-
-    def$PublicDef <<- c(NA, -diff(debt$PublicDebt))
-    def$WoOasdi   <<- c(NA, -diff(debt$PublicDebt + debt$OasdiDebt))
-    def$GrossDef  <<- c(NA, -diff(debt$GrossDebt))
-    def$OASDISurp <<- ss$OAS_SURPLUS + ss$DI_SURPLUS
-    def$MedicSurp <<- ss$HI_SURPLUS + ss$SMI_SURPLUS
-    def           <<- def[,c(1,7:4,8,9,2,3)]
-    def$GDP       <<- gdp$GDP
-    return(debt)
-}
-load_outlays <- function(){
-    #print("========== load_outlays ==========")
-    if (!exists("gdp")) load_gdp()
-    if (!exists("def")) load_debt()
-    out_names <- c("Year",
-        "Defense", "HUM_RES", "Educatn", "Health",  "Medicare","Inc_Sec", "Soc_Sec", "SS_on",   "SS_off",  "Veterans",
-        "PHYS_RES","Energy",  "Nat_Res", "Commerce","Cmrc_on", "Cmrc_off","Transprt","Communty","Net_Int", "Int_on",
-        "Int_off", "OTH_FUNC","Interntl","Science", "Agricult","Justice", "Gen_Govt","Allownce","Offs_Rec","Offs_on",
-        "Offs_off","Outlays", "Outly_on","Outly_of")
-    t3  <- load_transtable("hist03z1.xlsx", 1, 0)
-    out <<- create_num_table(t3, c(1,3:36), out_names, 1000)
-    OtherOut <- out$Outlays - (out$Defense + out$Health + out$Medicare + out$Inc_Sec +
-                            out$Soc_Sec + out$Net_Int + out$Commerce + out$Offs_Rec)
-    out <<- with(out, data.frame(Year, Justice, Agricult, Allownce, Commerce, Communty,
-                                 Defense, Educatn, Energy, Gen_Govt, Health,
-                                 Inc_Sec, Interntl, Medicare, Nat_Res, Net_Int,
-                                 Offs_Rec, Science, Soc_Sec, Transprt, Veterans,
-                                 OtherOut, Outlays, "Receipts"=def$Receipts))
-    out$GDP <<- gdp$GDP
-    return(out)
-}
-load_receipts <- function(){
-    #print("========== load_receipts ==========")
-    if (!exists("gdp")) load_gdp()
-    if (!exists("def")) load_debt()
-    rec_names <- c("Year",
-                   "Individual", "Corporate", "SocialIns", "SocInsOn",  "SocInsOff",
-                   "Excise","Other","Receipts","ReceiptsOn","ReceiptsOff")
-    t2  <- load_table("hist02z1.xlsx", 3, 6) # skip to 1-line header, then skip to 1940
-    rec <<- create_num_table(t2, c(1:11), rec_names, 1000)
-    rec$Outlays <<- def$Outlays
-    rates <- read.csv("taxrates.csv", skip = 3, stringsAsFactors = FALSE)
-    rec$TopRate  <<- rates$TopRate[rates$Year >= 1940]
-    rec$FicaRate <<- rates$FicaRate[rates$Year >= 1940]
-    rec$GDP       <<- gdp$GDP
-    return(rec)
-}
-# Load normal table (one year per row) and call proc_table
-load_table <- function(file, rskip, cskip){
-    #print(paste0("READ ", file))
-    if (in_shinyapps){
-        tt <- read_excel(file, skip = rskip, fileEncoding="latin1") # implied stringsAsFactors = FALSE 
-    }
-    else{
-        tt <- read_excel(file, skip = rskip) # implied stringsAsFactors = FALSE
-    }
-    proc_table(tt, cskip)
-}
-# Load transposed table (one year per column), transpose and call proc_table
-load_transtable <- function(file, rskip, cskip){
-    #print(paste("READ", file))
-    if (in_shinyapps){
-        tt <- read_excel(file, skip = rskip, col_names = FALSE, fileEncoding="latin1") # implied stringsAsFactors = FALSE
-    }
-    else{
-        tt <- read_excel(file, skip = rskip, col_names = FALSE) # implied stringsAsFactors = FALSE
-    }
-    uu <- as.data.frame(t(tt[,-1]), stringsAsFactors = FALSE)
-    colnames(uu) <- tt[,1]
-    proc_table(uu, cskip)
-}
-# Skip first rskip rows (leaving one header row) and first cskip years
-# Name first column SYEAR and remove TQ row
-# Remove " estimate" from SYEAR and store index of first estimate in est_yr1
-# If there were estimates, remove all rows following estimates
-proc_table <- function(tt, cskip){
-    if (cskip > 0){
-        tt <- tt[cskip+1:nrow(tt),]
-    }
-    colnames(tt)[1] <- "SYEAR"
-    tt <- tt[tt$SYEAR != "TQ",]
-    est_i <- grep(" estimate", tt$SYEAR)
-    min_est <<- min(est_i)
-    max_est <<- max(est_i)
-    if (max_est > 0) tt <- tt[1:max_est,] # remove rows after last estimate
-    tt$SYEAR <- sub(" estimate", "", tt$SYEAR)
-    min_est_yr <<- as.integer(tt$SYEAR[min_est])
-    max_est_yr <<- as.integer(tt$SYEAR[max_est])
-    tt$YEAR <- as.integer(tt$SYEAR)
-    #print(str(tt))
-    return(tt)
-}
-create_num_table <- function(tt, indices, names, div){
-    #print("========== RUN create_num_table ==========")
-    uu <- data.frame(tt[1])
-    for (i in 2:length(indices)){
-        indx <- indices[i]
-        uu[,names[i]] <- tt[indx]
-        uu[,names[i]] <- gsub("..........", "0", uu[,names[i]], fixed = TRUE)
-        uu[,names[i]] <- as.numeric(gsub(",", "", uu[,names[i]])) / div
-    }
-    uu[,1] <- as.numeric(uu[,1])
-    colnames(uu)[1] <- names[1]
-    return(uu)
-}
-adjust_num_table <- function(tt, num, div, name){
-    uu <- tt
-    for (i in 2:ncol(tt)){
-        uu[,i] <- tt[,i] * num / div
-    }
-    uu[name] <- div
-    return(uu)
-}
-create_str_table <- function(hh, tt, dp, num, div, adj, growth){
-    #print("========== RUN create_str_table ==========")
-    uu <- tt
-    for (i in 2:ncol(tt)){
-        uu[,i] <- num * tt[,i] / div
-    }
-    uu$ADJ <- adj
-    if (growth > 0){
-        start = 1 + growth
-        div <- div[c(start:nrow(uu))]
-        adj <- adj[c(start:nrow(uu))]
-        min_est <- min_est - growth
-        max_est <- max_est - growth
-        uu <- calc_growth(uu, growth)
-    }
-    for (i in 2:ncol(tt)){
-        uu[,i] <- format(round(uu[,i], digits = dp[i]), nsmall = dp[i], big.mark = ",")
-    }
-    i <- ncol(uu)
-    uu[,ncol(uu)] <- format(round(adj, digits = dp[i]), nsmall = dp[i], big.mark = ",")
-    uu[1:(min_est-1),1] <- paste0(uu[1:(min_est-1),1], " ")
-    uu[min_est:max_est,1] <- paste0(uu[min_est:max_est,1], "*")
-    colnames(hh) <- colnames(uu) # REMOVE IF POSSIBLE
-    uu <- rbind(hh, uu)
-    for (i in 1:ncol(uu)){
-        colnames(uu)[i] <- " "
-    }
-    return(uu)
-}
-calc_growth <- function(dd, lg){
-    if (lg <= 0){
-        return(dd)
-    }
-    ee <- dd[c((1+lg):nrow(dd)),]
-    for (i in 2:ncol(dd)){
-        num <- 100 * diff(dd[,i], lag = lg)
-        den <- dd[c(1:(nrow(dd)-lg)),i]
-        ee[,i] <- num / den
-    }
-     return(ee)
-}
-check_url <- function(input, session){
-    query <- parseQueryString(session$clientData$url_search)
-    #for (i in 1:(length(reactiveValuesToList(input)))){
-    #    nameval = names(reactiveValuesToList(input)[i])
-    #    print(paste(i, nameval, query[[nameval]]))
-    #}
-    if (input$ignore == FALSE){
-        if (!is.null(query[['topic']])){
-            updateSelectInput(session, "topic", selected = query[['topic']])
-        }
-        if (!is.null(query[['xunits']])){
-            updateSelectInput(session, "xunits", selected = query[['xunits']])
-        }
-        if (!is.null(query[['print']])){
-            updateCheckboxInput(session, "print", value = query[['print']])
-        }
-        if (!is.null(query[['xscale']])){
-            updateTextInput(session, "xscale", value = query[['xscale']])
-        }
-        if (!is.null(query[['yscale']])){
-            updateTextInput(session, "yscale", value = query[['yscale']])
-        }
-        if (!is.null(query[['growth']])){
-            updateNumericInput(session, "growth", value = as.numeric(query[['growth']]))
-        }
-        if (!is.null(query[['theme']])){
-            updateSelectInput(session, "theme", selected = query[['theme']])
-        }
-        if (!is.null(query[['color']])){
-            updateTextInput(session, "color", value = query[['color']])
-        }
-        if (!is.null(query[['shape']])){
-            updateTextInput(session, "shape", value = query[['shape']])
-        }
-        if (!is.null(query[['graph']])){
-            updateSelectInput(session, "graph", selected = unlist(strsplit(query[['graph']],",")))
-        }
-    }
-}

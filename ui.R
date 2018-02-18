@@ -3,9 +3,11 @@ shinyUI(fluidPage(
     #comment out scripts for testing
     tags$head(includeScript("analytics.js")),
     tags$head(includeScript("statcount.js")),
-    headerPanel(paste0("Budget of the United States Government, FY ", fyear)),
+    #headerPanel(paste0("Budget of the United States Government, FY ", fyear)),
+    headerPanel(paste0("Budget of the United States Government")),
     sidebarPanel(
         width = 2,
+        numericInput("year1", "Year", 2019, min = 2018, max = 2019),
         selectInput("topic", "Topic",
                     choices  = c("Debt", "Deficit", "Receipts", "Outlays", "Outlays2", "Outlays3"),
                     selected =   "Debt"),

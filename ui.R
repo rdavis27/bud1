@@ -1,4 +1,4 @@
-fyear <- 2019
+#fyear <- 2019
 shinyUI(fluidPage(
     #comment out scripts for testing
     tags$head(includeScript("analytics.js")),
@@ -8,8 +8,12 @@ shinyUI(fluidPage(
     sidebarPanel(
         width = 2,
         numericInput("year1", "Year", 2019, min = 2018, max = 2019),
+        fluidRow(
+            column(6, style='padding:1px', checkboxInput("compareyr", "Compare to:", value = TRUE)),
+            column(6, style='padding:1px', numericInput("year2", "Year", 2018, min = 2018, max = 2019, width = "80%"))
+        ),
         selectInput("topic", "Topic",
-                    choices  = c("Debt", "Deficit", "Receipts", "Outlays", "Outlays2", "Outlays3"),
+                    choices  = c("Debt", "Deficit", "Receipts", "Outlays", "Outlays2", "Outlays3", "Outlays vs. Receipts"),
                     selected =   "Debt"),
         selectInput("xunits", "Units",
                     choices  = c("Actual Dollars","Real Dollars","Percent of GDP"),
@@ -26,7 +30,8 @@ shinyUI(fluidPage(
                     selected =   "theme_gray85"),
         textInput("color", "Color", value = ""),
         textInput("shape", "Shape", value = ""),
-        checkboxInput("ignore", "Ignore URL Parameters") ),
+        checkboxInput("ignore", "Ignore URL Parameters"),
+        textInput("legendpad", "Legend Padding", value = " ") ),
     mainPanel(
         div(
             tabsetPanel(id = "tabs",

@@ -11,7 +11,8 @@ shinyServer(
     function(input, output, session) {
         #observe({
         #})
-        currentTopic <- ""
+        currentTopic  <- ""
+        currentXunits <- ""
         varlist <<- read.csv("varlist.csv", stringsAsFactors = FALSE)
         bvpos <<- varlist[varlist$select > 0 & varlist$select < 90,]
         bvpos <<- bvpos[order(bvpos$topic, bvpos$select),]
@@ -35,6 +36,10 @@ shinyServer(
             else if (input$topic == "Outlays3"){
                 main = "Other Federal Outlays"
                 xlab = paste0("Source: U.S. Budget, FY ", input$year1, ", Historical Tables 1.1, 3.1, 10.1")
+            }
+            else if (input$topic == "Outlays vs. Receipts"){
+                main = "Federal Outlays and Receipts"
+                xlab = paste0("Source: U.S. Budget, FY ", input$year1, ", Historical Tables 1.1, 10.1")
             }
             else if (input$topic == "Receipts"){
                 main = "Federal Receipts"
@@ -67,9 +72,11 @@ shinyServer(
                 }
                 ylab = paste("Percent Growth in", ylab)
             }
+            df2 <- NULL
             if (input$topic == "Deficit"){
                 updated <- update_vars("Deficit")
-                df <- def
+                df  <- def
+                if (input$compareyr) df2 <- def2
             }
             else if (input$topic == "Outlays"){
                 updated <- update_vars("Outlays")
@@ -83,17 +90,42 @@ shinyServer(
                 updated <- update_vars("Outlays")
                 df <- out
             }
+            else if (input$topic == "Outlays vs. Receipts"){
+                updated <- update_vars("Receipts")
+                df <- rec
+                if (input$compareyr) df2 <- rec2
+            }
             else if (input$topic == "Receipts"){
                 updated <- update_vars("Receipts")
                 df <- rec
+                if (input$compareyr) df2 <- rec2
             }
             else {
                 updated <- update_vars(input$topic)
-                df <- debt
+                df  <- debt
+                if (input$compareyr) df2 <- debt2
             }
-            ggdf <- calc_growth(data.frame(df$Year, num*subset(df, select = varnames[as.numeric(varselect)])/div), input$growth)
-            colnames(ggdf) <- c("Year", varlabels[as.numeric(varselect)])
-            if (!updated){
+            vselect <<- varselect
+            vnames  <<- varnames
+            vlabels <<- varlabels
+            if (input$compareyr){
+                if (!is.null(df2)){
+                    df <- merge(df, df2, by="Year", all.x = TRUE)
+                    vnames <<- colnames(df)
+                    vnames <<- vnames[-1]
+                    vselect2 <<- as.numeric(vselect) + NCOL(df2) - 1
+                    vselect <<- c(vselect, vselect2)
+                    yr1 <- input$year1 %% 100
+                    yr2 <- input$year2 %% 100
+                    vlabels1 <<- gsub("$", paste0(input$legendpad,yr1), vlabels)
+                    vlabels2 <<- gsub("$", paste0(input$legendpad,yr2), vlabels)
+                    vlabels <<- c(vlabels1, vlabels2)
+                }
+            } 
+            ggdf <- calc_growth(data.frame(df$Year, num*subset(df, select = vnames[as.numeric(vselect)])/div), input$growth)
+            colnames(ggdf) <- c("Year", vlabels[as.numeric(vselect)])
+            #if (!updated){
+            if (TRUE){
                 ggdf <- melt(ggdf, id=c("Year"))
                 if (input$theme == "theme_bw") mytheme <- theme_bw(base_size = 18)
                 else if (input$theme == "theme_classic") mytheme <- theme_classic(base_size = 18)
@@ -173,12 +205,16 @@ shinyServer(
                 }
                 if(input$color != ""){
                     vcolor <- unlist(strsplit(input$color, ","))
-                    vcolor <- rep(vcolor, length.out=length(input$graph))
+                    if (!input$compareyr) mult <- 1
+                    else mult <- 2
+                    vcolor <- rep(vcolor, length.out=mult*length(input$graph)) #DEBUG
                     gg <- gg + scale_color_manual(values = vcolor)
                 }
                 if(input$shape != ""){
                     vshape <- unlist(strsplit(input$shape, ","))
-                    vshape <- rep(as.numeric(vshape), length.out=length(input$graph))
+                    if (!input$compareyr) mult <- 1
+                    else mult <- 2
+                    vshape <- rep(as.numeric(vshape), length.out=mult*length(input$graph))
                     gg <- gg + scale_shape_manual(values = vshape)
                 }
                 if (input$theme == "theme_gray85"){
@@ -232,6 +268,14 @@ shinyServer(
                 colnames(mhdr) <- " "
                 bvtopic <- bvall[bvall$topic == "Outlays",]
                 ingraph <- c("1","14","17","5","8","3","22","23")
+            }
+            else if (input$topic == "Outlays vs. Receipts"){
+                # Print receipts as a percent of GDP
+                mhdr <- data.frame(paste0("FEDERAL RECEIPTS: 1940-", max_est_yr), stringsAsFactors = FALSE)
+                mhdr[2,] <-               "(percentage of GDP)"
+                colnames(mhdr) <- " "
+                bvtopic <- bvall[bvall$topic == "Receipts",]
+                ingraph <- c("1","2","3","6","7","8","11")
             }
             else if (input$topic == "Receipts"){
                 # Print receipts as a percent of GDP
@@ -310,6 +354,9 @@ shinyServer(
             else if (input$topic == "Outlays3"){
                 tbl <- create_str_table(chdr, out[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
             }
+            else if (input$topic == "Outlays vs. Receipts"){
+                tbl <- create_str_table(chdr, rec[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
+            }
             else if (input$topic == "Receipts"){
                 tbl <- create_str_table(chdr, rec[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
             }
@@ -330,48 +377,78 @@ shinyServer(
             #cat(file = stderr(), paste0(parmlist,"\n"))
         })
         update_vars <- function(bvtop){
-            if (input$topic == currentTopic){
+            if (input$topic == currentTopic & input$xunits == currentXunits){
                 varselect <<- input$graph
                 updated = FALSE
             }
             else {
                 updated = TRUE
-                currentTopic <<- input$topic
+                currentTopic  <<- input$topic
+                currentXunits <<- input$xunits
                 varnames <<- bvpos$varname[bvpos$topic == bvtop]
                 varlabels <<- bvpos$label[bvpos$topic == bvtop]
                 #varchoice <- 1:length(varnames)
                 varchoice <<- bvpos$select[bvpos$topic == bvtop]
                 names(varchoice) <- varlabels
+                maxyear <- as.numeric(input$year1)+10
+                ysvalue <- ""
                 if (input$topic == "Deficit"){
                     varselect <<- c("1","2","3","4") # FIX
                     #varselect <<- c("6","5","4","3")
-                    updateTextInput(session, "xscale", label = NULL, value = "1970")
-                    updateTextInput(session, "yscale", label = NULL, value = "")
-                }
+                    if (input$xunits == "Percent of GDP") ysvalue <- "-14,2,2"
+                    updateTextInput(session, "xscale", label = NULL, value = paste0("1970,",maxyear,",10"))
+                    updateTextInput(session, "yscale", label = NULL, value = ysvalue)
+                    updateTextInput(session, "color",  label = NULL, value = "red,green4,blue,purple")
+                    updateTextInput(session, "shape",  label = NULL, value = "15,16,17,18,0,1,2,5")
+                 }
                 else if (input$topic == "Outlays"){
-                    varselect <<- c("6","10","13","11","18","15")
-                    updateTextInput(session, "xscale", label = NULL, value = "1970")
-                    updateTextInput(session, "yscale", label = NULL, value = "")
+                    varselect <<- c("6","10","13","11","18","15","4","16")
+                    if (input$xunits == "Percent of GDP") ysvalue <- "-1,8,1"
+                    updateTextInput(session, "xscale", label = NULL, value = paste0("1970,",maxyear,",10"))
+                    updateTextInput(session, "yscale", label = NULL, value = ysvalue)
+                    updateTextInput(session, "color",  label = NULL, value = "red,lightgreen,green4,blue,orange2,purple,brown,cyan")
+                    updateTextInput(session, "shape",  label = NULL, value = "15,16,17,8,0,1,2,3")
+                    
                 }
                 else if (input$topic == "Outlays2"){
                     varselect <<- c("7","20","19","12","9","2")
-                    updateTextInput(session, "xscale", label = NULL, value = "1970")
-                    updateTextInput(session, "yscale", label = NULL, value = "")
+                    if (input$xunits == "Percent of GDP") ysvalue <- "0,1.2,0.1"
+                    updateTextInput(session, "xscale", label = NULL, value = paste0("1970,",maxyear,",10"))
+                    updateTextInput(session, "yscale", label = NULL, value = ysvalue)
+                    updateTextInput(session, "color",  label = NULL, value = "red,green4,blue,orange2,purple,black")
+                    updateTextInput(session, "shape",  label = NULL, value = "15,16,17,0,1,2")
                 }
                 else if (input$topic == "Outlays3"){
                     varselect <<- c("1","14","17","5","8","3")
-                    updateTextInput(session, "xscale", label = NULL, value = "1970")
-                    updateTextInput(session, "yscale", label = NULL, value = "")
+                    if (input$xunits == "Percent of GDP") ysvalue <- "-0.2,0.52,0.1"
+                    updateTextInput(session, "xscale", label = NULL, value = paste0("1970,",maxyear,",10"))
+                    updateTextInput(session, "yscale", label = NULL, value = ysvalue)
+                    updateTextInput(session, "color",  label = NULL, value = "red,green4,blue,orange2,purple,black")
+                    updateTextInput(session, "shape",  label = NULL, value = "15,16,17,0,1,2")
+                }
+                else if (input$topic == "Outlays vs. Receipts"){
+                    varselect <<- c("11","8")
+                    if (input$xunits == "Percent of GDP") ysvalue <- "14,24,1"
+                    updateTextInput(session, "xscale", label = NULL, value = paste0("1950,",maxyear,",10"))
+                    updateTextInput(session, "yscale", label = NULL, value = ysvalue)
+                    updateTextInput(session, "color",  label = NULL, value = "red,blue")
+                    updateTextInput(session, "shape",  label = NULL, value = "15,16,0,1")
                 }
                 else if (input$topic == "Receipts"){
                     varselect <<- c("1","2","3","6","7")
-                    updateTextInput(session, "xscale", label = NULL, value = "")
-                    updateTextInput(session, "yscale", label = NULL, value = "")
+                    if (input$xunits == "Percent of GDP") ysvalue <- "0,10,1"
+                    updateTextInput(session, "xscale", label = NULL, value = paste0("1940,",maxyear,",10"))
+                    updateTextInput(session, "yscale", label = NULL, value = ysvalue)
+                    updateTextInput(session, "color",  label = NULL, value = "red,green4,blue,black,orange2")
+                    updateTextInput(session, "shape",  label = NULL, value = "15,16,17,8,18,0,1,2,3,5")
                 }
                 else {
                     varselect <<- c("1","2","3")
-                    updateTextInput(session, "xscale", label = NULL, value = "")
-                    updateTextInput(session, "yscale", label = NULL, value = "0")
+                    if (input$xunits == "Percent of GDP") ysvalue <- "0,120,10"
+                    updateTextInput(session, "xscale", label = NULL, value = paste0("1940,",maxyear,",10"))
+                    updateTextInput(session, "yscale", label = NULL, value = ysvalue)
+                    updateTextInput(session, "color",  label = NULL, value = "red,green4,blue")
+                    updateTextInput(session, "shape",  label = NULL, value = "15,16,17,0,1,2")
                 }
                 updateSelectInput(session, "graph", label = NULL,
                                   choices  = varchoice,
@@ -394,6 +471,8 @@ shinyServer(
         load_data <- function(){
             xls_ext <<- "xls"
             if (as.numeric(input$year1) >= 2019) xls_ext <<- "xlsx"
+            xls_ext2 <<- "xls"
+            if (as.numeric(input$year2) >= 2019) xls_ext2 <<- "xlsx"
             if (!exists("gdp$DEFLATOR")) load_gdp()
             if (!exists("debt$MediDebt")) load_debt()
             if (!exists("def$MedicSurp")) load_debt()
@@ -408,32 +487,47 @@ shinyServer(
             gdp <<- create_num_table(t10, c(1:4), c("YEAR","GDP","GDP_CHAINED","DEFLATOR"), 1)
             return(gdp)
         }
-        load_debt <- function(){
-            #print("========== load_debt ==========")
+        load_debtn <- function(year, ext, suffix){
+            #print("========== load_debtn ==========")
             #if (!exists("gdp")) load_gdp()
-            t1  <- load_table(paste0(input$year1,"/hist01z1.",xls_ext), 3, 41)
-            def <<- create_num_table(t1, c(1,2,3,4), c("Year","Receipts","Outlays","Unified"), 1000)
-            t7  <- load_table(paste0(input$year1,"/hist07z1.",xls_ext), 3, 0) # skip was 5 for csv
-            debt <<- create_num_table(t7, c(1,2,4,3), c("Year","GrossDebt","PublicDebt","GovAccDebt"), 1000)
-            t10 <- load_table(paste0(input$year1,"/hist10z1.",xls_ext), 4, 0) # skip was 14 for csv
+            yr <- year %% 100
+            t1  <- load_table(paste0(year,"/hist01z1.",ext), 3, 41)
+            #t1[1:(min_est-2),] <- NA
+            def <<- create_num_table(t1, c(1,2,3,4), c("Year","Receipts2","Outlays2","Unified2"), 1000)
+            t7  <- load_table(paste0(year,"/hist07z1.",ext), 3, 0) # skip was 5 for csv
+            #t7[1:(min_est-2),] <- NA
+            debt <<- create_num_table(t7, c(1,2,4,3), c("Year","GrossDebt2","PublicDebt2","GovAccDebt2"), 1000)
+            t10 <- load_table(paste0(year,"/hist10z1.",ext), 4, 0) # skip was 14 for csv
             gdp <<- create_num_table(t10, c(1:4), c("YEAR","GDP","GDP_CHAINED","DEFLATOR"), 1)
-            t13 <- load_transtable(paste0(input$year1,"/hist13z1.",xls_ext), 2, 4)
+            t13 <- load_transtable(paste0(year,"/hist13z1.",ext), 2, 4)
             ss  <<- create_num_table(t13, c(1,20,23,44,47,74,78,102,105), c("YEAR","OAS_SURPLUS","OAS_BAL",
-                                                                            "DI_SURPLUS","DI_BAL","HI_SURPLUS","HI_BAL","SMI_SURPLUS","SMI_BAL"), 1000)
-            debt$OasdiDebt <<- ss$OAS_BAL + ss$DI_BAL
-            debt$MediDebt  <<- ss$HI_BAL + ss$SMI_BAL
-            debt$WoOasdi   <<- debt$PublicDebt + debt$OasdiDebt
-            debt           <<- debt[,c(1,2,7,3:6)]
-            debt$GDP       <<- gdp$GDP
+                                                                             "DI_SURPLUS","DI_BAL","HI_SURPLUS","HI_BAL","SMI_SURPLUS","SMI_BAL"), 1000)
+            debt$OasdiDebt2 <<- ss$OAS_BAL + ss$DI_BAL
+            debt$MediDebt2  <<- ss$HI_BAL + ss$SMI_BAL
+            debt$WoOasdi2   <<- debt$PublicDebt2 + debt$OasdiDebt2
+            debt            <<- debt[,c(1,2,7,3:6)]
+            debt$GDP2       <<- gdp$GDP
             
-            def$PublicDef <<- c(NA, -diff(debt$PublicDebt))
-            def$WoOasdi   <<- c(NA, -diff(debt$PublicDebt + debt$OasdiDebt))
-            def$GrossDef  <<- c(NA, -diff(debt$GrossDebt))
-            def$OASDISurp <<- ss$OAS_SURPLUS + ss$DI_SURPLUS
-            def$MedicSurp <<- ss$HI_SURPLUS + ss$SMI_SURPLUS
-            def           <<- def[,c(1,7:4,8,9,2,3)]
-            def$GDP       <<- gdp$GDP
+            def$PublicDef2 <<- c(NA, -diff(debt$PublicDebt2))
+            def$WoOasdi2   <<- c(NA, -diff(debt$PublicDebt2 + debt$OasdiDebt2))
+            def$GrossDef2  <<- c(NA, -diff(debt$GrossDebt2))
+            def$OASDISurp2 <<- ss$OAS_SURPLUS + ss$DI_SURPLUS
+            def$MedicSurp2 <<- ss$HI_SURPLUS + ss$SMI_SURPLUS
+            def            <<- def[,c(1,7:4,8,9,2,3)]
+            def$GDP2       <<- gdp$GDP
+            colnames(def)  <<- gsub("2", suffix, colnames(def))
+            colnames(debt) <<- gsub("2", suffix, colnames(debt))
             return(debt)
+        }
+        load_debt <- function(){
+            if (input$compareyr){
+                load_debtn(input$year2, xls_ext2, "2")
+                debt2 <<- debt
+                def2  <<- def
+                gdp2  <<- gdp
+                ss2   <<- ss
+            }
+            load_debtn(input$year1, xls_ext, "")
         }
         load_outlays <- function(){
             #print("========== load_outlays ==========")
@@ -456,16 +550,19 @@ shinyServer(
             out$GDP <<- gdp$GDP
             return(out)
         }
-        load_receipts <- function(){
-            #print("========== load_receipts ==========")
+        load_receiptsn <- function(year, ext, suffix){
+            #print("========== load_receiptsn ==========")
             if (!exists("gdp")) load_gdp()
             if (!exists("def")) load_debt()
             rec_names <- c("Year",
-                           "Individual", "Corporate", "SocialIns", "SocInsOn",  "SocInsOff",
-                           "Excise","Other","Receipts","ReceiptsOn","ReceiptsOff")
-            t2  <- load_table(paste0(input$year1,"/hist02z1.",xls_ext), 3, 6) # skip to 1-line header, then skip to 1940
+                           "Individual2", "Corporate2", "SocialIns2", "SocInsOn2",  "SocInsOff2",
+                           "Excise2","Other2","Receipts2","ReceiptsOn2","ReceiptsOff2")
+            t2  <- load_table(paste0(year,"/hist02z1.",ext), 3, 6) # skip to 1-line header, then skip to 1940
             rec <<- create_num_table(t2, c(1:11), rec_names, 1000)
-            rec$Outlays <<- def$Outlays
+            if (suffix == "2"){
+                rec$Outlays <<- def2$Outlays
+            }
+            else rec$Outlays <<- def$Outlays
             rates <- read.csv("taxrates.csv", skip = 3, stringsAsFactors = FALSE)
             rates <- rates[rates$Year >= 1940,]
             rates <- rates[1:NROW(rec),]
@@ -473,8 +570,19 @@ shinyServer(
             rec$FicaRate <<- rates$FicaRate
             #rec$TopRate  <<- rates$TopRate[rates$Year >= 1940]
             #rec$FicaRate <<- rates$FicaRate[rates$Year >= 1940]
-            rec$GDP       <<- gdp$GDP
+            if (suffix == "2"){
+                rec$GDP     <<- gdp2$GDP
+            }
+            else rec$GDP     <<- gdp$GDP
+            colnames(rec)   <<- gsub("2", suffix, colnames(rec))
             return(rec)
+        }
+        load_receipts <- function(){
+            if (input$compareyr){
+                load_receiptsn(input$year2, xls_ext2, "2")
+                rec2 <<- rec
+            }
+            load_receiptsn(input$year1, xls_ext, "")
         }
         # Load normal table (one year per row) and call proc_table
         load_table <- function(file, rskip, cskip){

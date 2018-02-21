@@ -21,33 +21,41 @@ shinyServer(
             #cat(file=stderr(), "Locale =", Sys.getlocale(), "\n")
             Sys.setlocale(category = "LC_ALL", locale = "C")
             load_data()
-            if (input$topic == "Deficit"){
-                main = "Selected Surpluses or Deficits(-)"
-                xlab = paste0("Source: U.S. Budget, FY ", input$year1, ", Historical Tables 1.1, 7.1, 13.1")
-            }
-            else if (input$topic == "Outlays"){
-                main = "Federal Outlays"
-                xlab = paste0("Source: U.S. Budget, FY ", input$year1, ", Historical Tables 1.1, 3.1, 10.1")
-            }
-            else if (input$topic == "Outlays2"){
-                main = "Other Federal Outlays"
-                xlab = paste0("Source: U.S. Budget, FY ", input$year1, ", Historical Tables 1.1, 3.1, 10.1")
-            }
-            else if (input$topic == "Outlays3"){
-                main = "Other Federal Outlays"
-                xlab = paste0("Source: U.S. Budget, FY ", input$year1, ", Historical Tables 1.1, 3.1, 10.1")
-            }
-            else if (input$topic == "Outlays vs. Receipts"){
-                main = "Federal Outlays and Receipts"
-                xlab = paste0("Source: U.S. Budget, FY ", input$year1, ", Historical Tables 1.1, 10.1")
-            }
-            else if (input$topic == "Receipts"){
-                main = "Federal Receipts"
-                xlab = paste0("Source: U.S. Budget, FY ", input$year1, ", Historical Tables 1.1, 2.1, 10.1")
+            if (input$compareyr){
+                sources <- paste("FY", input$year1, "and", input$year2)
+                budgets <- "Budgets"
             }
             else{
-                main = "Federal Debt"
-                xlab = paste0("Source: U.S. Budget, FY ", input$year1, ", Historical Tables 7.1, 10.1, 13.1")
+                sources <- paste("FY", input$year1)
+                budgets <- "Budget"
+            }
+            if (input$topic == "Deficit"){
+                main = paste("Selected Surpluses or Deficits(-) from", sources, budgets)
+                xlab = paste0("Source: U.S. Budget, ", sources, ", Historical Tables 1.1, 7.1, 13.1")
+            }
+            else if (input$topic == "Outlays"){
+                main = paste("Federal Outlays from", sources, budgets)
+                xlab = paste0("Source: U.S. Budget, ", sources, ", Historical Tables 1.1, 3.1, 10.1")
+            }
+            else if (input$topic == "Outlays2"){
+                main = paste("Other Federal Outlays from", sources, budgets)
+                xlab = paste0("Source: U.S. Budget, ", sources, ", Historical Tables 1.1, 3.1, 10.1")
+            }
+            else if (input$topic == "Outlays3"){
+                main = paste("Other Federal Outlays from", sources, budgets)
+                xlab = paste0("Source: U.S. Budget, ", sources, ", Historical Tables 1.1, 3.1, 10.1")
+            }
+            else if (input$topic == "Outlays vs. Receipts"){
+                main = paste("Federal Outlays and Receipts from", sources, budgets)
+                xlab = paste0("Source: U.S. Budget, ", sources, ", Historical Tables 1.1, 10.1")
+            }
+            else if (input$topic == "Receipts"){
+                main = paste("Federal Receipts from", sources, budgets)
+                xlab = paste0("Source: U.S. Budget, ", sources, ", Historical Tables 1.1, 2.1, 10.1")
+            }
+            else{
+                main = paste("Federal Debt from", sources, budgets)
+                xlab = paste0("Source: U.S. Budget, ", sources, ", Historical Tables 7.1, 10.1, 13.1")
             }
             ylab = "Percent of GDP"
             num = 100
@@ -124,8 +132,8 @@ shinyServer(
             } 
             ggdf <- calc_growth(data.frame(df$Year, num*subset(df, select = vnames[as.numeric(vselect)])/div), input$growth)
             colnames(ggdf) <- c("Year", vlabels[as.numeric(vselect)])
-            #if (!updated){
-            if (TRUE){
+            if (!updated){
+            #if (TRUE){
                 ggdf <- melt(ggdf, id=c("Year"))
                 if (input$theme == "theme_bw") mytheme <- theme_bw(base_size = 18)
                 else if (input$theme == "theme_classic") mytheme <- theme_classic(base_size = 18)
@@ -377,12 +385,14 @@ shinyServer(
             #cat(file = stderr(), paste0(parmlist,"\n"))
         })
         update_vars <- function(bvtop){
+            #if (input$topic == currentTopic){
             if (input$topic == currentTopic & input$xunits == currentXunits){
                 varselect <<- input$graph
-                updated = FALSE
+                updated <- FALSE
             }
             else {
-                updated = TRUE
+                updated <- TRUE
+                if (input$topic == currentTopic) updated <- FALSE
                 currentTopic  <<- input$topic
                 currentXunits <<- input$xunits
                 varnames <<- bvpos$varname[bvpos$topic == bvtop]
@@ -393,14 +403,17 @@ shinyServer(
                 maxyear <- as.numeric(input$year1)+10
                 ysvalue <- ""
                 if (input$topic == "Deficit"){
-                    varselect <<- c("1","2","3","4") # FIX
+                    #varselect <<- c("1","2","3","4") # FIX
+                    varselect <<- c("1","3","4") # remove OASDI
                     #varselect <<- c("6","5","4","3")
                     if (input$xunits == "Percent of GDP") ysvalue <- "-14,2,2"
                     updateTextInput(session, "xscale", label = NULL, value = paste0("1970,",maxyear,",10"))
                     updateTextInput(session, "yscale", label = NULL, value = ysvalue)
-                    updateTextInput(session, "color",  label = NULL, value = "red,green4,blue,purple")
-                    updateTextInput(session, "shape",  label = NULL, value = "15,16,17,18,0,1,2,5")
-                 }
+                    #updateTextInput(session, "color",  label = NULL, value = "red,green4,blue,purple")
+                    #updateTextInput(session, "shape",  label = NULL, value = "15,16,17,18,0,1,2,5")
+                    updateTextInput(session, "color",  label = NULL, value = "red,blue,green4") # remove OASDI
+                    updateTextInput(session, "shape",  label = NULL, value = "15,16,17,0,1,2") # remove OASDI
+                }
                 else if (input$topic == "Outlays"){
                     varselect <<- c("6","10","13","11","18","15","4","16")
                     if (input$xunits == "Percent of GDP") ysvalue <- "-1,8,1"

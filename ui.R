@@ -7,10 +7,10 @@ shinyUI(fluidPage(
     headerPanel(paste0("Budget of the United States Government")),
     sidebarPanel(
         width = 2,
-        numericInput("year1", "Year", 2019, min = 2018, max = 2019),
+        numericInput("year1", "Year", 2019, min = 2017, max = 2019),
         fluidRow(
             column(6, style='padding:1px', checkboxInput("compareyr", "Compare to:", value = TRUE)),
-            column(6, style='padding:1px', numericInput("year2", "Year", 2018, min = 2018, max = 2019, width = "80%"))
+            column(6, style='padding:1px', numericInput("year2", "Year", 2018, min = 2017, max = 2019, width = "80%"))
         ),
         selectInput("topic", "Topic",
                     choices  = c("Debt", "Deficit", "Receipts", "Outlays", "Outlays2", "Outlays3", "Outlays vs. Receipts"),

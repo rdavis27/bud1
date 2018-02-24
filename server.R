@@ -89,14 +89,17 @@ shinyServer(
             else if (input$topic == "Outlays"){
                 updated <- update_vars("Outlays")
                 df <- out
+                if (input$compareyr) df2 <- out2
             }
             else if (input$topic == "Outlays2"){
                 updated <- update_vars("Outlays")
                 df <- out
+                if (input$compareyr) df2 <- out2
             }
             else if (input$topic == "Outlays3"){
                 updated <- update_vars("Outlays")
                 df <- out
+                if (input$compareyr) df2 <- out2
             }
             else if (input$topic == "Outlays vs. Receipts"){
                 updated <- update_vars("Receipts")
@@ -419,8 +422,8 @@ shinyServer(
                     if (input$xunits == "Percent of GDP") ysvalue <- "-1,8,1"
                     updateTextInput(session, "xscale", label = NULL, value = paste0("1970,",maxyear,",10"))
                     updateTextInput(session, "yscale", label = NULL, value = ysvalue)
-                    updateTextInput(session, "color",  label = NULL, value = "red,lightgreen,green4,blue,orange2,purple,brown,cyan")
-                    updateTextInput(session, "shape",  label = NULL, value = "15,16,17,8,0,1,2,3")
+                    updateTextInput(session, "color",  label = NULL, value = "red,green2,green4,blue,orange2,purple,brown,cyan3")
+                    updateTextInput(session, "shape",  label = NULL, value = "15,16,17,18,11,9,7,8,0,1,2,5,6,3,4,96")
                     
                 }
                 else if (input$topic == "Outlays2"){
@@ -429,7 +432,7 @@ shinyServer(
                     updateTextInput(session, "xscale", label = NULL, value = paste0("1970,",maxyear,",10"))
                     updateTextInput(session, "yscale", label = NULL, value = ysvalue)
                     updateTextInput(session, "color",  label = NULL, value = "red,green4,blue,orange2,purple,black")
-                    updateTextInput(session, "shape",  label = NULL, value = "15,16,17,0,1,2")
+                    updateTextInput(session, "shape",  label = NULL, value = "15,16,17,18,9,7,0,1,2,5,3,4")
                 }
                 else if (input$topic == "Outlays3"){
                     varselect <<- c("1","14","17","5","8","3")
@@ -437,7 +440,7 @@ shinyServer(
                     updateTextInput(session, "xscale", label = NULL, value = paste0("1970,",maxyear,",10"))
                     updateTextInput(session, "yscale", label = NULL, value = ysvalue)
                     updateTextInput(session, "color",  label = NULL, value = "red,green4,blue,orange2,purple,black")
-                    updateTextInput(session, "shape",  label = NULL, value = "15,16,17,0,1,2")
+                    updateTextInput(session, "shape",  label = NULL, value = "15,16,17,18,9,7,0,1,2,5,3,4")
                 }
                 else if (input$topic == "Outlays vs. Receipts"){
                     varselect <<- c("11","8")
@@ -542,26 +545,42 @@ shinyServer(
             }
             load_debtn(input$year1, xls_ext, "")
         }
-        load_outlays <- function(){
+        load_outlaysn <- function(year, ext, suffix){
             #print("========== load_outlays ==========")
             if (!exists("gdp")) load_gdp()
             if (!exists("def")) load_debt()
             out_names <- c("Year",
-                           "Defense", "HUM_RES", "Educatn", "Health",  "Medicare","Inc_Sec", "Soc_Sec", "SS_on",   "SS_off",  "Veterans",
-                           "PHYS_RES","Energy",  "Nat_Res", "Commerce","Cmrc_on", "Cmrc_off","Transprt","Communty","Net_Int", "Int_on",
-                           "Int_off", "OTH_FUNC","Interntl","Science", "Agricult","Justice", "Gen_Govt","Allownce","Offs_Rec","Offs_on",
-                           "Offs_off","Outlays", "Outly_on","Outly_of")
-            t3  <- load_transtable(paste0(input$year1,"/hist03z1.",xls_ext), 1, 0)
+                           "Defense2", "HUM_RES2", "Educatn2", "Health2", "Medicare2","Inc_Sec2", "Soc_Sec2", "SS_on2", "SS_off2", "Veterans2",
+                           "PHYS_RES2","Energy2",  "Nat_Res2", "Commerce2","Cmrc_on2", "Cmrc_off2","Transprt2","Communty2","Net_Int2", "Int_on2",
+                           "Int_off2", "OTH_FUNC2","Interntl2","Science2", "Agricult2","Justice2", "Gen_Govt2","Allownce2","Offs_Rec2","Offs_on2",
+                           "Offs_off2","Outlays2", "Outly_on2","Outly_of2")
+            t3  <- load_transtable(paste0(year,"/hist03z1.",ext), 1, 0)
             out <<- create_num_table(t3, c(1,3:36), out_names, 1000)
-            OtherOut <- out$Outlays - (out$Defense + out$Health + out$Medicare + out$Inc_Sec +
-                                           out$Soc_Sec + out$Net_Int + out$Commerce + out$Offs_Rec)
-            out <<- with(out, data.frame(Year, Justice, Agricult, Allownce, Commerce, Communty,
-                                         Defense, Educatn, Energy, Gen_Govt, Health,
-                                         Inc_Sec, Interntl, Medicare, Nat_Res, Net_Int,
-                                         Offs_Rec, Science, Soc_Sec, Transprt, Veterans,
-                                         OtherOut, Outlays, "Receipts"=def$Receipts))
-            out$GDP <<- gdp$GDP
+            OtherOut2 <- out$Outlays2 - (out$Defense2 + out$Health2 + out$Medicare2 + out$Inc_Sec2 +
+                                           out$Soc_Sec2 + out$Net_Int2 + out$Commerce2 + out$Offs_Rec2)
+            out <<- with(out, data.frame(Year, Justice2, Agricult2, Allownce2, Commerce2, Communty2,
+                                         Defense2, Educatn2, Energy2, Gen_Govt2, Health2,
+                                         Inc_Sec2, Interntl2, Medicare2, Nat_Res2, Net_Int2,
+                                         Offs_Rec2, Science2, Soc_Sec2, Transprt2, Veterans2,
+                                         OtherOut2, Outlays2))
+            if (suffix == "2"){
+                out$Receipts2 <<- def2$Receipts
+                out$GDP2      <<- gdp2$GDP
+                out[1:(min_est-2),] <<- NA
+            }
+            else{
+                out$Receipts2 <<- def$Receipts
+                out$GDP2      <<- gdp$GDP
+            }
+            colnames(out)   <<- gsub("2", suffix, colnames(out))
             return(out)
+        }
+        load_outlays <- function(){
+            if (input$compareyr){
+                load_outlaysn(input$year2, xls_ext2, "2")
+                out2 <<- out
+            }
+            load_outlaysn(input$year1, xls_ext, "")
         }
         load_receiptsn <- function(year, ext, suffix){
             #print("========== load_receiptsn ==========")

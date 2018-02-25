@@ -401,7 +401,8 @@ shinyServer(
             parmlist <- URLencode(paste0("?topic=",input$topic,"&xunits=",input$xunits,"&print=",input$print,
                                          "&xscale=",input$xscale,"&yscale=",input$yscale,"&growth=",input$growth,
                                          "&theme=",input$theme,"&color=",input$color,"&shape=",input$shape,
-                                         "&graph=",graphlist))
+                                         "&graph=",graphlist,"&legendpad=",input$legendpad,"&year1=",input$year1,
+                                         "&year2=",input$year2,"&compareyr=",input$compareyr))
             cat("\n* = estimated\n\n")
             cat("URL parameters=\n")
             cat(paste0(parmlist,"\n"))
@@ -416,6 +417,10 @@ shinyServer(
             else {
                 updated <- TRUE
                 if (input$topic == currentTopic) updated <- FALSE
+                if (currentTopic == "Growth of Receipts, Outlays, GDP"){
+                    updateTextInput(session, "growth", label = NULL, value = 0)
+                    updateTextInput(session, "xunits", label = NULL, value = save_xunits)
+                }
                 currentTopic  <<- input$topic
                 currentXunits <<- input$xunits
                 varnames <<- bvpos$varname[bvpos$topic == bvtop]
@@ -472,6 +477,7 @@ shinyServer(
                 }
                 else if (input$topic == "Growth of Receipts, Outlays, GDP"){
                     varselect <<- c("1","3","8","11","14")
+                    save_xunits <<- input$xunits
                     if (input$xunits == "Percent of GDP")
                         updateTextInput(session, "xunits", label = NULL, value = "Real Dollars")
                     if (input$xunits == "Real Dollars") ysvalue <- "-40,160,20"
@@ -790,6 +796,18 @@ shinyServer(
                 }
                 if (!is.null(query[['graph']])){
                     updateSelectInput(session, "graph", selected = unlist(strsplit(query[['graph']],",")))
+                }
+                if (!is.null(query[['legendpad']])){
+                    updateTextInput(session, "legendpad", value = query[['legendpad']])
+                }
+                if (!is.null(query[['year1']])){
+                    updateNumericInput(session, "year1", value = as.numeric(query[['year1']]))
+                }
+                if (!is.null(query[['year2']])){
+                    updateNumericInput(session, "year2", value = as.numeric(query[['year2']]))
+                }
+                if (!is.null(query[['compareyr']])){
+                    updateCheckboxInput(session, "print", value = query[['compareyr']])
                 }
             }
         }

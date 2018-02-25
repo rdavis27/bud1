@@ -50,7 +50,7 @@ shinyServer(
                 xlab = paste0("Source: U.S. Budget, ", sources, ", Historical Tables 1.1, 10.1")
             }
             else if (input$topic == "Growth of Receipts, Outlays, GDP"){
-                main = paste("Receipts, Outlays and GDP")
+                main = paste("Receipts, Outlays, and GDP")
                 xlab = paste0("Source: U.S. Budget, ", sources, ", Historical Tables 1.1, 2.1, 10.1")
             }
             else if (input$topic == "Receipts"){

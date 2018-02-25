@@ -49,6 +49,10 @@ shinyServer(
                 main = paste("Federal Outlays and Receipts from", sources, budgets)
                 xlab = paste0("Source: U.S. Budget, ", sources, ", Historical Tables 1.1, 10.1")
             }
+            else if (input$topic == "Growth of Receipts, Outlays, GDP"){
+                main = paste("Receipts, Outlays and GDP")
+                xlab = paste0("Source: U.S. Budget, ", sources, ", Historical Tables 1.1, 2.1, 10.1")
+            }
             else if (input$topic == "Receipts"){
                 main = paste("Federal Receipts from", sources, budgets)
                 xlab = paste0("Source: U.S. Budget, ", sources, ", Historical Tables 1.1, 2.1, 10.1")
@@ -102,6 +106,11 @@ shinyServer(
                 if (input$compareyr) df2 <- out2
             }
             else if (input$topic == "Outlays vs. Receipts"){
+                updated <- update_vars("Receipts")
+                df <- rec
+                if (input$compareyr) df2 <- rec2
+            }
+            else if (input$topic == "Growth of Receipts, Outlays, GDP"){
                 updated <- update_vars("Receipts")
                 df <- rec
                 if (input$compareyr) df2 <- rec2
@@ -288,6 +297,14 @@ shinyServer(
                 bvtopic <- bvall[bvall$topic == "Receipts",]
                 ingraph <- c("1","2","3","6","7","8","11")
             }
+            else if (input$topic == "Growth of Receipts, Outlays, GDP"){
+                # Print receipts as a percent of GDP
+                mhdr <- data.frame(paste0("FEDERAL RECEIPTS: 1940-", max_est_yr), stringsAsFactors = FALSE)
+                mhdr[2,] <-               "(percentage of GDP)"
+                colnames(mhdr) <- " "
+                bvtopic <- bvall[bvall$topic == "Receipts",]
+                ingraph <- c("1","2","3","6","7","8","11","14")
+            }
             else if (input$topic == "Receipts"){
                 # Print receipts as a percent of GDP
                 mhdr <- data.frame(paste0("FEDERAL RECEIPTS: 1940-", max_est_yr), stringsAsFactors = FALSE)
@@ -366,6 +383,9 @@ shinyServer(
                 tbl <- create_str_table(chdr, out[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
             }
             else if (input$topic == "Outlays vs. Receipts"){
+                tbl <- create_str_table(chdr, rec[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
+            }
+            else if (input$topic == "Growth of Receipts, Outlays, GDP"){
                 tbl <- create_str_table(chdr, rec[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
             }
             else if (input$topic == "Receipts"){
@@ -449,6 +469,17 @@ shinyServer(
                     updateTextInput(session, "yscale", label = NULL, value = ysvalue)
                     updateTextInput(session, "color",  label = NULL, value = "red,blue")
                     updateTextInput(session, "shape",  label = NULL, value = "15,16,0,1")
+                }
+                else if (input$topic == "Growth of Receipts, Outlays, GDP"){
+                    varselect <<- c("1","3","8","11","14")
+                    if (input$xunits == "Percent of GDP")
+                        updateTextInput(session, "xunits", label = NULL, value = "Real Dollars")
+                    if (input$xunits == "Real Dollars") ysvalue <- "-40,160,20"
+                    updateTextInput(session, "xscale", label = NULL, value = paste0("1950,",maxyear,",10"))
+                    updateTextInput(session, "yscale", label = NULL, value = ysvalue)
+                    updateTextInput(session, "color",  label = NULL, value = "2,4,orange2,3,1")
+                    updateTextInput(session, "shape",  label = NULL, value = "16,17,18,8,15,1,2,5,3,0")
+                    updateTextInput(session, "growth", label = NULL, value = 10)
                 }
                 else if (input$topic == "Receipts"){
                     varselect <<- c("1","2","3","6","7")

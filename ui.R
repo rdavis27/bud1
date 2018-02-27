@@ -30,7 +30,6 @@ shinyUI(fluidPage(
                     selected =   "theme_gray85"),
         textInput("color", "Color", value = ""),
         textInput("shape", "Shape", value = ""),
-        checkboxInput("ignore", "Ignore URL Parameters"),
         textInput("legendpad", "Legend Padding", value = " ") ),
     mainPanel(
         div(

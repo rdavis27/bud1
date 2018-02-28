@@ -10,17 +10,17 @@ options(max.print = 2000)
 shinyServer(
     function(input, output, session) {
         rv <- reactiveValues()
-        rv$topic  <- "Debt"
-        rv$xunits <- "Percent of GDP"
+        rv$topic  <- "" # "Debt"
+        rv$xunits <- "" # "Percent of GDP"
         currentTopic  <- ""
         varselect <- 1
         varnames  <- "GrossDebt"
         varlabels <- "Gross Debt"
-        ignoreParms <- FALSE
-        varlist <<- read.csv("varlist.csv", stringsAsFactors = FALSE)
-        bvpos <<- varlist[varlist$select > 0 & varlist$select < 90,]
-        bvpos <<- bvpos[order(bvpos$topic, bvpos$select),]
-        bvall <<- varlist[order(varlist$topic, varlist$select),]
+        checkURL <- 0
+        varlist <- read.csv("varlist.csv", stringsAsFactors = FALSE)
+        bvpos <- varlist[varlist$select > 0 & varlist$select < 90,]
+        bvpos <- bvpos[order(bvpos$topic, bvpos$select),]
+        bvall <- varlist[order(varlist$topic, varlist$select),]
         output$myggPlot <- renderPlot({
             #cat(file=stderr(), "Locale =", Sys.getlocale(), "\n")
             Sys.setlocale(category = "LC_ALL", locale = "C")
@@ -172,7 +172,6 @@ shinyServer(
                         miny = yy[1]
                     }
                 }
-                #parmlist = paste0("topic=",topic,"&xunits=",xunits,"&graph=",input$graph,"&print=",input$print,"&xscale=",input$xscale,"&yscale=",input$yscale,"&growth=",input$growth,"&theme=",input$theme,"\n")
                 graphlist <- paste(input$graph, collapse=',')
                 parmlist <- URLencode(paste0("?topic=",topic,"&xunits=",xunits,"&print=",input$print,
                                              "&xscale=",input$xscale,"&yscale=",input$yscale,"&growth=",input$growth,
@@ -408,69 +407,97 @@ shinyServer(
         })
         #proc_topic <- observeEvent(input$topic, {
         proc_topic <- observe({
-            if (check_url(input, session)){
+            topic  <- input$topic
+            xunits <- input$xunits
+            year1  <- input$year1
+
+            if (checkURL == 0){
+                query <<- parseQueryString(session$clientData$url_search)
+                qtopic <- query[['topic']]
+                if (!is.null(qtopic)){
+                    updateSelectInput(session, "topic", selected = qtopic)
+                    rv$topic <- qtopic
+                    if (topic != qtopic) checkURL <<- 1
+                    else checkURL <<- 2
+                }
+                else checkURL <<- 4
             }
-            else {
+            else if (checkURL == 1){
+                checkURL <<- 2
+            }
+            if (checkURL == 2){
+                for (i in 1:length(query)){
+                    # get parameters required for input
+                    if (names(query[i]) == "year1"){
+                        assign(names(query[i]), as.numeric(query[[i]]))
+                    }
+                    else{
+                        assign(names(query[i]), as.character(query[[i]]))
+                    }
+                }
+                checkURL <<- 3
+            }
+
+            if (checkURL != 1){
                 update_growth <- FALSE
-                xunits <- input$xunits
                 if (currentTopic == "Growth of Receipts, Outlays, GDP"){
-                    if (input$topic != "Growth of Receipts, Outlays, GDP"){
-                        growth <- 0
+                    if (topic != "Growth of Receipts, Outlays, GDP"){
+                        #growth <- 0
                         xunits <- save_xunits
                         update_growth <- TRUE
                     }
                 }
-                maxyear <- as.numeric(input$year1)+10
+                maxyear <- as.numeric(year1)+10
                 yscale <- ""
                 growth <- 0
-                if (input$topic == "Deficit"){
+                if (topic == "Deficit"){
                     #varselect <<- c("1","2","3","4") # FIX
                     varselect <<- c("1","3","4") # remove OASDI
                     #varselect <<- c("6","5","4","3")
-                    if (input$xunits == "Percent of GDP") yscale <- "-14,2,2"
+                    if (xunits == "Percent of GDP") yscale <- "-14,2,2"
                     xscale <- paste0("1970,",maxyear,",10")
                     #color  <- "red,green4,blue,purple"
                     #shape  <- "15,16,17,18,0,1,2,5"
                     color  <- "red,blue,green4" # remove OASDI
                     shape  <- "15,16,17,0,1,2"  # remove OASDI
                 }
-                else if (input$topic == "Outlays"){
+                else if (topic == "Outlays"){
                     varselect <<- c("6","10","13","11","18","15","4","16")
-                    if (input$xunits == "Percent of GDP") yscale <- "-1,8,1"
+                    if (xunits == "Percent of GDP") yscale <- "-1,8,1"
                     xscale <- paste0("1970,",maxyear,",10")
                     color  <- "red,green2,green4,blue,orange2,purple,brown,cyan3"
                     shape  <- "15,16,17,18,11,9,7,8,0,1,2,5,6,3,4,96"
                     
                 }
-                else if (input$topic == "Outlays2"){
+                else if (topic == "Outlays2"){
                     varselect <<- c("7","20","19","12","9","2")
-                    if (input$xunits == "Percent of GDP") yscale <- "0,1.2,0.1"
+                    if (xunits == "Percent of GDP") yscale <- "0,1.2,0.1"
                     xscale <- paste0("1970,",maxyear,",10")
                     color  <- "red,green4,blue,orange2,purple,black"
                     shape  <- "15,16,17,18,9,7,0,1,2,5,3,4"
                 }
-                else if (input$topic == "Outlays3"){
+                else if (topic == "Outlays3"){
                     varselect <<- c("1","14","17","5","8","3")
-                    if (input$xunits == "Percent of GDP") yscale <- "-0.2,0.52,0.1"
+                    if (xunits == "Percent of GDP") yscale <- "-0.2,0.52,0.1"
                     xscale <- paste0("1970,",maxyear,",10")
                     color  <- "red,green4,blue,orange2,purple,black"
                     shape  <- "15,16,17,18,9,7,0,1,2,5,3,4"
                 }
-                else if (input$topic == "Outlays vs. Receipts"){
+                else if (topic == "Outlays vs. Receipts"){
                     varselect <<- c("11","8")
-                    if (input$xunits == "Percent of GDP") yscale <- "14,24,1"
+                    if (xunits == "Percent of GDP") yscale <- "14,24,1"
                     xscale <- paste0("1950,",maxyear,",10")
                     color  <- "red,blue"
                     shape  <- "15,16,0,1"
                 }
-                else if (input$topic == "Growth of Receipts, Outlays, GDP"){
+                else if (topic == "Growth of Receipts, Outlays, GDP"){
                     varselect <<- c("1","3","8","11","14")
                     if (currentTopic != "Growth of Receipts, Outlays, GDP"){
-                        save_xunits <<- input$xunits
+                        save_xunits <<- xunits
                         growth <- 10
                         update_growth <- TRUE
                     }
-                    xunits <- input$xunits
+                    xunits <- xunits
                     if (xunits == "Percent of GDP"){
                         xunits <- "Real Dollars"
                         yscale <- "-40,160,20"
@@ -482,65 +509,85 @@ shinyServer(
                     color  <- "2,4,orange2,3,1"
                     shape  <- "16,17,18,8,15,1,2,5,3,0"
                 }
-                else if (input$topic == "Receipts"){
+                else if (topic == "Receipts"){
                     varselect <<- c("1","2","3","6","7")
-                    if (input$xunits == "Percent of GDP") yscale <- "0,10,1"
+                    if (xunits == "Percent of GDP") yscale <- "0,10,1"
                     xscale <- paste0("1940,",maxyear,",10")
                     color  <- "red,green4,blue,black,orange2"
                     shape  <- "15,16,17,8,18,0,1,2,3,5"
                 }
                 else {
                     varselect <<- c("1","2","3")
-                    if (input$xunits == "Percent of GDP") yscale <- "0,120,10"
+                    if (xunits == "Percent of GDP") yscale <- "0,120,10"
                     xscale <- paste0("1940,",maxyear,",10")
                     color  <- "red,green4,blue"
                     shape  <- "15,16,17,0,1,2"
                 }
-            }
-            if (input$topic == "Deficit"){
-                bvtop <- "Deficit"
-            }
-            else if (input$topic == "Outlays"){
-                bvtop <- "Outlays"
-            }
-            else if (input$topic == "Outlays2"){
-                bvtop <- "Outlays"
-            }
-            else if (input$topic == "Outlays3"){
-                bvtop <- "Outlays"
-            }
-            else if (input$topic == "Outlays vs. Receipts"){
-                bvtop <- "Receipts"
-            }
-            else if (input$topic == "Growth of Receipts, Outlays, GDP"){
-                bvtop <- "Receipts"
-            }
-            else if (input$topic == "Receipts"){
-                bvtop <- "Receipts"
-            }
-            else {
-                bvtop <- input$topic
-            }
-            currentTopic  <<- input$topic
-            varnames <<- bvpos$varname[bvpos$topic == bvtop]
-            varlabels <<- bvpos$label[bvpos$topic == bvtop]
-            #varchoice <- 1:length(varnames)
-            varchoice <<- bvpos$select[bvpos$topic == bvtop]
-            names(varchoice) <- varlabels
+                if (topic == "Deficit"){
+                    bvtop <- "Deficit"
+                }
+                else if (topic == "Outlays"){
+                    bvtop <- "Outlays"
+                }
+                else if (topic == "Outlays2"){
+                    bvtop <- "Outlays"
+                }
+                else if (topic == "Outlays3"){
+                    bvtop <- "Outlays"
+                }
+                else if (topic == "Outlays vs. Receipts"){
+                    bvtop <- "Receipts"
+                }
+                else if (topic == "Growth of Receipts, Outlays, GDP"){
+                    bvtop <- "Receipts"
+                }
+                else if (topic == "Receipts"){
+                    bvtop <- "Receipts"
+                }
+                else {
+                    bvtop <- topic
+                }
+                currentTopic  <<- topic
+                varnames <<- bvpos$varname[bvpos$topic == bvtop]
+                varlabels <<- bvpos$label[bvpos$topic == bvtop]
+                #varchoice <- 1:length(varnames)
+                varchoice <<- bvpos$select[bvpos$topic == bvtop]
+                names(varchoice) <- varlabels
 
-            updateSelectInput(session, "graph", label = NULL,
-                              choices  = varchoice,
-                              selected = varselect)
-            updateTextInput(session, "xscale", label = NULL, value = xscale)
-            updateTextInput(session, "yscale", label = NULL, value = yscale)
-            updateTextInput(session, "color",  label = NULL, value = color)
-            updateTextInput(session, "shape",  label = NULL, value = shape)
-            if (update_growth){
-                updateNumericInput(session, "growth", label = NULL, value = growth)
-                updateTextInput(session, "xunits", label = NULL, value = xunits)
+                if (checkURL == 3){
+                    for (i in 1:length(query)){
+                        #print(paste0("[[]]",names(query[i]),"=",query[[i]]))
+                        if (names(query[i]) == "growth"){
+                            update_growth <- TRUE
+                            assign(names(query[i]), as.numeric(query[[i]]))
+                        }
+                        if (names(query[i]) == "compareyr"){
+                            assign(names(query[i]), as.logical(query[[i]]))
+                        }
+                        else{
+                            assign(names(query[i]), as.character(query[[i]]))
+                        }
+                    }
+                    checkURL <<- 4
+                }
+
+                updateSelectInput(session, "graph", label = NULL,
+                                  choices  = varchoice,
+                                  selected = varselect)
+                updateTextInput(session, "xscale", label = NULL, value = xscale)
+                updateTextInput(session, "yscale", label = NULL, value = yscale)
+                updateTextInput(session, "color",  label = NULL, value = color)
+                updateTextInput(session, "shape",  label = NULL, value = shape)
+                if (update_growth){
+                    updateNumericInput(session, "growth", label = NULL, value = growth)
+                    updateTextInput(session, "xunits", label = NULL, value = xunits)
+                }
+                if (exists("compareyr")){
+                    updateCheckboxInput(session, "compareyr", label = NULL, value = compareyr)
+                }
+                rv$xunits <- xunits
+                rv$topic  <- topic
             }
-            rv$xunits <- xunits
-            rv$topic  <- input$topic
         })
         center_print <- function(hh, line){
             hhwid <- sum(nchar(hh)+1)-1
@@ -790,74 +837,6 @@ shinyServer(
                 ee[,i] <- num / den
             }
             return(ee)
-        }
-        check_url <- function(input, session){
-            query <- parseQueryString(session$clientData$url_search)
-            #for (i in 1:(length(reactiveValuesToList(input)))){
-            #    nameval = names(reactiveValuesToList(input)[i])
-            #    print(paste(i, nameval, query[[nameval]]))
-            #}
-            haveParms <- FALSE
-            if (ignoreParms == FALSE){
-                ignoreParms <<- TRUE
-                if (!is.null(query[['topic']])){
-                    updateSelectInput(session, "topic", selected = query[['topic']])
-                    haveParms <- TRUE
-                }
-                if (!is.null(query[['xunits']])){
-                    updateSelectInput(session, "xunits", selected = query[['xunits']])
-                    haveParms <- TRUE
-                }
-                if (!is.null(query[['print']])){
-                    updateCheckboxInput(session, "print", value = as.logical(query[['print']]))
-                    haveParms <- TRUE
-                }
-                if (!is.null(query[['xscale']])){
-                    updateTextInput(session, "xscale", value = query[['xscale']])
-                    haveParms <- TRUE
-                }
-                if (!is.null(query[['yscale']])){
-                    updateTextInput(session, "yscale", value = query[['yscale']])
-                    haveParms <- TRUE
-                }
-                if (!is.null(query[['growth']])){
-                    updateNumericInput(session, "growth", value = as.numeric(query[['growth']]))
-                    haveParms <- TRUE
-                }
-                if (!is.null(query[['theme']])){
-                    updateSelectInput(session, "theme", selected = query[['theme']])
-                    haveParms <- TRUE
-                }
-                if (!is.null(query[['color']])){
-                    updateTextInput(session, "color", value = query[['color']])
-                    haveParms <- TRUE
-                }
-                if (!is.null(query[['shape']])){
-                    updateTextInput(session, "shape", value = query[['shape']])
-                    haveParms <- TRUE
-                }
-                if (!is.null(query[['graph']])){
-                    updateSelectInput(session, "graph", selected = unlist(strsplit(query[['graph']],",")))
-                    haveParms <- TRUE
-                }
-                if (!is.null(query[['legendpad']])){
-                    updateTextInput(session, "legendpad", value = query[['legendpad']])
-                    haveParms <- TRUE
-                }
-                if (!is.null(query[['year1']])){
-                    updateNumericInput(session, "year1", value = as.numeric(query[['year1']]))
-                    haveParms <- TRUE
-                }
-                if (!is.null(query[['year2']])){
-                    updateNumericInput(session, "year2", value = as.numeric(query[['year2']]))
-                    haveParms <- TRUE
-                }
-                if (!is.null(query[['compareyr']])){
-                    updateCheckboxInput(session, "compareyr", value = as.logical(query[['compareyr']]))
-                    haveParms <- TRUE
-                }
-            }
-            return(haveParms)
         }
     }
 )

@@ -173,7 +173,7 @@ shinyServer(
                     }
                 }
                 graphlist <- paste(input$graph, collapse=',')
-                parmlist <- URLencode(paste0("?topic=",topic,"&xunits=",xunits,"&print=",input$print,
+                parmlist <- URLencode(paste0("?topic=",topic,"&xunits=",xunits,"&output=",input$output,
                                              "&xscale=",input$xscale,"&yscale=",input$yscale,"&growth=",input$growth,
                                              "&theme=",input$theme,"&color=",input$color,"&shape=",input$shape,
                                              "&graph=",graphlist))
@@ -318,7 +318,7 @@ shinyServer(
                 bvtopic <- bvall[bvall$topic == "Debt",]
                 ingraph <- c("1","2","3","4","5","6")
             }
-            if (input$print == TRUE){
+            if (input$output == TRUE){
                 ingraph <- input$graph
             }
             bvmatch <- bvtopic[match(c(0,as.numeric(ingraph),99),bvtopic$select),]
@@ -395,7 +395,7 @@ shinyServer(
             center_print(chdr[4,], mhdr[2,])
             print(tbl, print.gap = 1, row.names = FALSE)
             graphlist <- paste(input$graph, collapse=',')
-            parmlist <- URLencode(paste0("?topic=",input$topic,"&xunits=",input$xunits,"&print=",input$print,
+            parmlist <- URLencode(paste0("?topic=",input$topic,"&xunits=",input$xunits,"&output=",input$output,
                                          "&xscale=",input$xscale,"&yscale=",input$yscale,"&growth=",input$growth,
                                          "&theme=",input$theme,"&color=",input$color,"&shape=",input$shape,
                                          "&graph=",graphlist,"&legendpad=",input$legendpad,"&year1=",input$year1,
@@ -410,6 +410,7 @@ shinyServer(
             topic  <- input$topic
             xunits <- input$xunits
             year1  <- input$year1
+            allx   <- input$allx
 
             if (checkURL == 0){
                 query <<- parseQueryString(session$clientData$url_search)
@@ -431,6 +432,12 @@ shinyServer(
                     if (names(query[i]) == "year1"){
                         assign(names(query[i]), as.numeric(query[[i]]))
                     }
+                    else if (names(query[i]) == "year2"){
+                        assign(names(query[i]), as.numeric(query[[i]]))
+                    }
+                    else if (names(query[i]) == "allx"){
+                        assign(names(query[i]), as.logical(query[[i]]))
+                    }
                     else{
                         assign(names(query[i]), as.character(query[[i]]))
                     }
@@ -450,43 +457,46 @@ shinyServer(
                 maxyear <- as.numeric(year1)+10
                 yscale <- ""
                 growth <- 0
+                if (allx) xscale <- paste0("1940,",maxyear,",10")
+                else xscale <- paste0("1970,",maxyear,",10")
                 if (topic == "Deficit"){
-                    #varselect <<- c("1","2","3","4") # FIX
-                    varselect <<- c("1","3","4") # remove OASDI
-                    #varselect <<- c("6","5","4","3")
+                    varselect <<- c("1","3","4") # remove OASDI (2)
                     if (xunits == "Percent of GDP") yscale <- "-14,2,2"
-                    xscale <- paste0("1970,",maxyear,",10")
-                    #color  <- "red,green4,blue,purple"
-                    #shape  <- "15,16,17,18,0,1,2,5"
-                    color  <- "red,blue,green4" # remove OASDI
-                    shape  <- "15,16,17,0,1,2"  # remove OASDI
+                    color  <- "red,blue,green4" # remove OASDI (purple)
+                    shape  <- "15,16,17,0,1,2"  # remove OASDI (18, 5)
                 }
                 else if (topic == "Outlays"){
                     varselect <<- c("6","10","13","11","18","15","4","16")
-                    if (xunits == "Percent of GDP") yscale <- "-1,8,1"
-                    xscale <- paste0("1970,",maxyear,",10")
+                    if (xunits == "Percent of GDP"){
+                        if(allx) yscale <- "-1,14,1"
+                        else     yscale <- "-1,8,1"
+                    }
                     color  <- "red,green2,green4,blue,orange2,purple,brown,cyan3"
                     shape  <- "15,16,17,18,11,9,7,8,0,1,2,5,6,3,4,96"
                     
                 }
                 else if (topic == "Outlays2"){
                     varselect <<- c("7","20","19","12","9","2")
-                    if (xunits == "Percent of GDP") yscale <- "0,1.2,0.1"
-                    xscale <- paste0("1970,",maxyear,",10")
+                    if (xunits == "Percent of GDP"){
+                        if(allx) yscale <- "0,3.1,0.5"
+                        else     yscale <- "0,1.2,0.1"
+                    }
                     color  <- "red,green4,blue,orange2,purple,black"
                     shape  <- "15,16,17,18,9,7,0,1,2,5,3,4"
                 }
                 else if (topic == "Outlays3"){
                     varselect <<- c("1","14","17","5","8","3")
-                    if (xunits == "Percent of GDP") yscale <- "-0.2,0.52,0.1"
-                    xscale <- paste0("1970,",maxyear,",10")
+                    if (xunits == "Percent of GDP"){
+                        if(allx) yscale <- "-0.2,1,0.1"
+                        else     yscale <- "-0.2,0.52,0.1"
+                    }
                     color  <- "red,green4,blue,orange2,purple,black"
                     shape  <- "15,16,17,18,9,7,0,1,2,5,3,4"
                 }
                 else if (topic == "Outlays vs. Receipts"){
                     varselect <<- c("11","8")
                     if (xunits == "Percent of GDP") yscale <- "14,24,1"
-                    xscale <- paste0("1950,",maxyear,",10")
+                    if (!allx) xscale <- paste0("1950,",maxyear,",10")
                     color  <- "red,blue"
                     shape  <- "15,16,0,1"
                 }
@@ -500,26 +510,26 @@ shinyServer(
                     xunits <- xunits
                     if (xunits == "Percent of GDP"){
                         xunits <- "Real Dollars"
-                        yscale <- "-40,160,20"
+                        if(allx) yscale <- "-40,160,20"
+                        else     yscale <- "-40,100,20"
                     }
                     else if (xunits == "Real Dollars"){
-                        yscale <- "-40,160,20"
+                        if(allx) yscale <- "-40,160,20"
+                        else     yscale <- "-40,100,20"
                     }
-                    xscale <- paste0("1950,",maxyear,",10")
+                    if (allx) xscale <- paste0("1950,",maxyear,",10")
                     color  <- "2,4,orange2,3,1"
                     shape  <- "16,17,18,8,15,1,2,5,3,0"
                 }
                 else if (topic == "Receipts"){
                     varselect <<- c("1","2","3","6","7")
                     if (xunits == "Percent of GDP") yscale <- "0,10,1"
-                    xscale <- paste0("1940,",maxyear,",10")
                     color  <- "red,green4,blue,black,orange2"
                     shape  <- "15,16,17,8,18,0,1,2,3,5"
                 }
                 else {
                     varselect <<- c("1","2","3")
                     if (xunits == "Percent of GDP") yscale <- "0,120,10"
-                    xscale <- paste0("1940,",maxyear,",10")
                     color  <- "red,green4,blue"
                     shape  <- "15,16,17,0,1,2"
                 }
@@ -557,11 +567,20 @@ shinyServer(
                 if (checkURL == 3){
                     for (i in 1:length(query)){
                         #print(paste0("[[]]",names(query[i]),"=",query[[i]]))
-                        if (names(query[i]) == "growth"){
+                        if (names(query[i]) == "year1"){
+                            assign(names(query[i]), as.numeric(query[[i]]))
+                        }
+                        else if (names(query[i]) == "year2"){
+                            assign(names(query[i]), as.numeric(query[[i]]))
+                        }
+                        else if (names(query[i]) == "allx"){
+                            assign(names(query[i]), as.logical(query[[i]]))
+                        }
+                        else if (names(query[i]) == "growth"){
                             update_growth <- TRUE
                             assign(names(query[i]), as.numeric(query[[i]]))
                         }
-                        if (names(query[i]) == "compareyr"){
+                        else if (names(query[i]) == "compareyr"){
                             assign(names(query[i]), as.logical(query[[i]]))
                         }
                         else{

@@ -258,7 +258,7 @@ shinyServer(
             load_data()
             if (topic == "Deficit"){
                 # Print deficits as a percent of GDP
-                mhdr <- data.frame(paste0("RECEIPTS, OUTLAYS, AND SURPLUSES OR DEFICITS(-): 1940-", max_est_yr), stringsAsFactors = FALSE)
+                mhdr <- data.frame(paste0("RECEIPTS, OUTLAYS, AND SURPLUSES OR DEFICITS(-): U.S. BUDGET, FY"), stringsAsFactors = FALSE)
                 mhdr[2,] <-               "(percentage of GDP)"
                 colnames(mhdr) <- " "
                 bvtopic <- bvall[bvall$topic == "Deficit",]
@@ -267,7 +267,7 @@ shinyServer(
             }
             else if (topic == "Outlays"){
                 # Print outlays as a percent of GDP
-                mhdr <- data.frame(paste0("FEDERAL OUTLAYS: 1940-", max_est_yr), stringsAsFactors = FALSE)
+                mhdr <- data.frame(paste0("FEDERAL OUTLAYS: U.S. BUDGET, FY"), stringsAsFactors = FALSE)
                 mhdr[2,] <-               "(percentage of GDP)"
                 colnames(mhdr) <- " "
                 bvtopic <- bvall[bvall$topic == "Outlays",]
@@ -275,7 +275,7 @@ shinyServer(
             }
             else if (topic == "Outlays2"){
                 # Print outlays as a percent of GDP
-                mhdr <- data.frame(paste0("OTHER FEDERAL OUTLAYS: 1940-", max_est_yr), stringsAsFactors = FALSE)
+                mhdr <- data.frame(paste0("OTHER FEDERAL OUTLAYS: U.S. BUDGET, FY"), stringsAsFactors = FALSE)
                 mhdr[2,] <-               "(percentage of GDP)"
                 colnames(mhdr) <- " "
                 bvtopic <- bvall[bvall$topic == "Outlays",]
@@ -283,7 +283,7 @@ shinyServer(
             }
             else if (topic == "Outlays3"){
                 # Print outlays as a percent of GDP
-                mhdr <- data.frame(paste0("OTHER FEDERAL OUTLAYS: 1940-", max_est_yr), stringsAsFactors = FALSE)
+                mhdr <- data.frame(paste0("OTHER FEDERAL OUTLAYS: U.S. BUDGET, FY"), stringsAsFactors = FALSE)
                 mhdr[2,] <-               "(percentage of GDP)"
                 colnames(mhdr) <- " "
                 bvtopic <- bvall[bvall$topic == "Outlays",]
@@ -291,7 +291,7 @@ shinyServer(
             }
             else if (topic == "Outlays vs. Receipts"){
                 # Print receipts as a percent of GDP
-                mhdr <- data.frame(paste0("FEDERAL RECEIPTS: 1940-", max_est_yr), stringsAsFactors = FALSE)
+                mhdr <- data.frame(paste0("FEDERAL RECEIPTS: U.S. BUDGET, FY"), stringsAsFactors = FALSE)
                 mhdr[2,] <-               "(percentage of GDP)"
                 colnames(mhdr) <- " "
                 bvtopic <- bvall[bvall$topic == "Receipts",]
@@ -299,7 +299,7 @@ shinyServer(
             }
             else if (topic == "Growth of Receipts, Outlays, GDP"){
                 # Print receipts as a percent of GDP
-                mhdr <- data.frame(paste0("FEDERAL RECEIPTS: 1940-", max_est_yr), stringsAsFactors = FALSE)
+                mhdr <- data.frame(paste0("FEDERAL RECEIPTS: U.S. BUDGET, FY"), stringsAsFactors = FALSE)
                 mhdr[2,] <-               "(percentage of GDP)"
                 colnames(mhdr) <- " "
                 bvtopic <- bvall[bvall$topic == "Receipts",]
@@ -307,7 +307,7 @@ shinyServer(
             }
             else if (topic == "Receipts"){
                 # Print receipts as a percent of GDP
-                mhdr <- data.frame(paste0("FEDERAL RECEIPTS: 1940-", max_est_yr), stringsAsFactors = FALSE)
+                mhdr <- data.frame(paste0("FEDERAL RECEIPTS: U.S. BUDGET, FY"), stringsAsFactors = FALSE)
                 mhdr[2,] <-               "(percentage of GDP)"
                 colnames(mhdr) <- " "
                 bvtopic <- bvall[bvall$topic == "Receipts",]
@@ -315,7 +315,7 @@ shinyServer(
             }
             else{
                 # Print debts as a percent of GDP
-                mhdr <- data.frame(paste0("FEDERAL DEBT AT THE END OF FISCAL YEAR: 1940-", max_est_yr), stringsAsFactors = FALSE)
+                mhdr <- data.frame(paste0("FEDERAL DEBT AT THE END OF FISCAL YEAR: U.S. BUDGET, FY"), stringsAsFactors = FALSE)
                 mhdr[2,] <-               "(percentage of GDP)"
                 colnames(mhdr) <- " "
                 bvtopic <- bvall[bvall$topic == "Debt",]
@@ -330,6 +330,8 @@ shinyServer(
             num = 100
             div = gdp$GDP
             adj = gdp$GDP
+            div2 = gdp2$GDP
+            adj2 = gdp2$GDP
             dpz = 1
 
             if (xunits == "Actual Dollars"){
@@ -338,6 +340,8 @@ shinyServer(
                 num = 1
                 div = 1
                 adj = gdp$GDP
+                div2 = 1
+                adj2 = gdp2$GDP
             }
             else if (xunits == "Real Dollars")
             {
@@ -348,6 +352,8 @@ shinyServer(
                 num= 1
                 div = gdp$DEFLATOR
                 adj = gdp$DEFLATOR
+                div2 = gdp2$DEFLATOR
+                adj2 = gdp2$DEFLATOR
                 dpz = 4
             }
             if (input$growth > 0){
@@ -370,33 +376,52 @@ shinyServer(
             #Sys.setlocale(category = "LC_ALL", locale = "C")
             dp <- bvmatch$dp
             dp[length(dp)] <- dpz
+            df2 <- NULL
             if (topic == "Deficit"){
-                tbl <- create_str_table(chdr, def[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
+                df  <- def
+                if (input$compareyr) df2 <- def2
             }
             else if (topic == "Outlays"){
-                tbl <- create_str_table(chdr, out[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
+                df <- out
+                if (input$compareyr) df2 <- out2
             }
             else if (topic == "Outlays2"){
-                tbl <- create_str_table(chdr, out[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
+                df <- out
+                if (input$compareyr) df2 <- out2
             }
             else if (topic == "Outlays3"){
-                tbl <- create_str_table(chdr, out[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
+                df <- out
+                if (input$compareyr) df2 <- out2
             }
             else if (topic == "Outlays vs. Receipts"){
-                tbl <- create_str_table(chdr, rec[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
+                df <- rec
+                if (input$compareyr) df2 <- rec2
             }
             else if (topic == "Growth of Receipts, Outlays, GDP"){
-                tbl <- create_str_table(chdr, rec[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
+                df <- rec
+                if (input$compareyr) df2 <- rec2
             }
             else if (topic == "Receipts"){
-                tbl <- create_str_table(chdr, rec[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
+                df <- rec
+                if (input$compareyr) df2 <- rec2
             }
-            else{
-                tbl <- create_str_table(chdr, debt[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
+            else {
+                df  <- debt
+                if (input$compareyr) df2 <- debt2
             }
-            center_print(chdr[4,], mhdr[1,])
+            tbl <- create_str_table(chdr, df[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, min_est, max_est, input$growth)
+            center_print(chdr[4,], paste(mhdr[1,], input$year1))
             center_print(chdr[4,], mhdr[2,])
             print(tbl, print.gap = 1, row.names = FALSE)
+            if (input$compareyr){
+                tbl2 <- create_str_table(chdr, df2[,c(0,as.numeric(ingraph))+1], dp, num, div2, adj2, min_est2, max_est2, input$growth)
+                cat("\n")
+                center_print(chdr[4,], paste(mhdr[1,], input$year2))
+                center_print(chdr[4,], mhdr[2,])
+                growth <- input$growth
+                tbl2 <- tbl2[c(1:4,(min_est2+3-growth):(max_est2+4-growth)),]
+                print(tbl2, print.gap = 1, row.names = FALSE)
+            }
             graphlist <- paste(input$graph, collapse=',')
             parmlist <- URLencode(paste0("?topic=",topic,"&xunits=",xunits,"&output=",input$output,"&allx=",input$allx,
                                          "&xscale=",input$xscale,"&yscale=",input$yscale,"&growth=",input$growth,
@@ -636,6 +661,10 @@ shinyServer(
         }
         load_gdp <- function(){
             #print("========== load_gdp ==========")
+            if (input$compareyr){
+                t10_2 <- load_table(paste0(input$year2,"/hist10z1.",xls_ext2), 14, 0)
+                gdp2 <<- create_num_table(t10_2, c(1:4), c("YEAR","GDP","GDP_CHAINED","DEFLATOR"), 1)
+            }
             t10 <- load_table(paste0(input$year1,"/hist10z1.",xls_ext), 14, 0)
             gdp <<- create_num_table(t10, c(1:4), c("YEAR","GDP","GDP_CHAINED","DEFLATOR"), 1)
             return(gdp)
@@ -645,10 +674,8 @@ shinyServer(
             #if (!exists("gdp")) load_gdp()
             yr <- year %% 100
             t1  <- load_table(paste0(year,"/hist01z1.",ext), 3, 41)
-            #t1[1:(min_est-2),] <- NA
             def <<- create_num_table(t1, c(1,2,3,4), c("Year","Receipts2","Outlays2","Unified2"), 1000)
             t7  <- load_table(paste0(year,"/hist07z1.",ext), 3, 0) # skip was 5 for csv
-            #t7[1:(min_est-2),] <- NA
             debt <<- create_num_table(t7, c(1,2,4,3), c("Year","GrossDebt2","PublicDebt2","GovAccDebt2"), 1000)
             t10 <- load_table(paste0(year,"/hist10z1.",ext), 4, 0) # skip was 14 for csv
             gdp <<- create_num_table(t10, c(1:4), c("YEAR","GDP","GDP_CHAINED","DEFLATOR"), 1)
@@ -679,6 +706,10 @@ shinyServer(
                 def2  <<- def
                 gdp2  <<- gdp
                 ss2   <<- ss
+                min_est2    <<- min_est
+                max_est2    <<- max_est
+                min_est_yr2 <<- min_est_yr
+                max_est_yr2 <<- max_est_yr
             }
             load_debtn(input$year1, xls_ext, "")
         }
@@ -703,7 +734,7 @@ shinyServer(
             if (suffix == "2"){
                 out$Receipts2 <<- def2$Receipts
                 out$GDP2      <<- gdp2$GDP
-                out[1:(min_est-2),] <<- NA
+                out[1:(min_est2-1),] <<- NA
             }
             else{
                 out$Receipts2 <<- def$Receipts
@@ -716,6 +747,10 @@ shinyServer(
             if (input$compareyr){
                 load_outlaysn(input$year2, xls_ext2, "2")
                 out2 <<- out
+                min_est2    <<- min_est
+                max_est2    <<- max_est
+                min_est_yr2 <<- min_est_yr
+                max_est_yr2 <<- max_est_yr
             }
             load_outlaysn(input$year1, xls_ext, "")
         }
@@ -750,6 +785,10 @@ shinyServer(
             if (input$compareyr){
                 load_receiptsn(input$year2, xls_ext2, "2")
                 rec2 <<- rec
+                min_est2    <<- min_est
+                max_est2    <<- max_est
+                min_est_yr2 <<- min_est_yr
+                max_est_yr2 <<- max_est_yr
             }
             load_receiptsn(input$year1, xls_ext, "")
         }
@@ -819,7 +858,7 @@ shinyServer(
             uu[name] <- div
             return(uu)
         }
-        create_str_table <- function(hh, tt, dp, num, div, adj, growth){
+        create_str_table <- function(hh, tt, dp, num, div, adj, mini, maxi, growth){
             #print("========== RUN create_str_table ==========")
             uu <- tt
             for (i in 2:ncol(tt)){
@@ -830,8 +869,8 @@ shinyServer(
                 start = 1 + growth
                 div <- div[c(start:nrow(uu))]
                 adj <- adj[c(start:nrow(uu))]
-                min_est <- min_est - growth
-                max_est <- max_est - growth
+                mini <- mini - growth
+                maxi <- maxi - growth
                 uu <- calc_growth(uu, growth)
             }
             for (i in 2:ncol(tt)){
@@ -839,8 +878,8 @@ shinyServer(
             }
             i <- ncol(uu)
             uu[,ncol(uu)] <- format(round(adj, digits = dp[i]), nsmall = dp[i], big.mark = ",")
-            uu[1:(min_est-1),1] <- paste0(uu[1:(min_est-1),1], " ")
-            uu[min_est:max_est,1] <- paste0(uu[min_est:max_est,1], "*")
+            uu[1:(mini-1),1] <- paste0(uu[1:(mini-1),1], " ")
+            uu[mini:maxi,1] <- paste0(uu[mini:maxi,1], "*")
             colnames(hh) <- colnames(uu) # REMOVE IF POSSIBLE
             uu <- rbind(hh, uu)
             for (i in 1:ncol(uu)){

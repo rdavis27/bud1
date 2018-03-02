@@ -173,10 +173,11 @@ shinyServer(
                     }
                 }
                 graphlist <- paste(input$graph, collapse=',')
-                parmlist <- URLencode(paste0("?topic=",topic,"&xunits=",xunits,"&output=",input$output,
+                parmlist <- URLencode(paste0("?topic=",topic,"&xunits=",xunits,"&output=",input$output,"&allx=",input$allx,
                                              "&xscale=",input$xscale,"&yscale=",input$yscale,"&growth=",input$growth,
                                              "&theme=",input$theme,"&color=",input$color,"&shape=",input$shape,
-                                             "&graph=",graphlist))
+                                             "&graph=",graphlist,"&legendpad=",input$legendpad,"&year1=",input$year1,
+                                             "&year2=",input$year2,"&compareyr=",input$compareyr))
                 cat(file = stderr(), paste0(parmlist,"\n"))
                 gg <- ggplot(ggdf, aes(x=Year, y=value, group=variable)) +
                     geom_line(aes(color=variable), size=1, alpha=0.7) +
@@ -252,8 +253,10 @@ shinyServer(
             }
         })
         output$myText <- renderPrint({
+            topic  <- input$topic
+            xunits <- input$xunits
             load_data()
-            if (input$topic == "Deficit"){
+            if (topic == "Deficit"){
                 # Print deficits as a percent of GDP
                 mhdr <- data.frame(paste0("RECEIPTS, OUTLAYS, AND SURPLUSES OR DEFICITS(-): 1940-", max_est_yr), stringsAsFactors = FALSE)
                 mhdr[2,] <-               "(percentage of GDP)"
@@ -262,7 +265,7 @@ shinyServer(
                 ingraph <- c("7","8","4","3","2","1","5","6") #FIX
                 #ingraph <- c("1","2","3","4","5","6","7","8")
             }
-            else if (input$topic == "Outlays"){
+            else if (topic == "Outlays"){
                 # Print outlays as a percent of GDP
                 mhdr <- data.frame(paste0("FEDERAL OUTLAYS: 1940-", max_est_yr), stringsAsFactors = FALSE)
                 mhdr[2,] <-               "(percentage of GDP)"
@@ -270,7 +273,7 @@ shinyServer(
                 bvtopic <- bvall[bvall$topic == "Outlays",]
                 ingraph <- c("6","10","13","11","18","15","4","16","21","22","23")
             }
-            else if (input$topic == "Outlays2"){
+            else if (topic == "Outlays2"){
                 # Print outlays as a percent of GDP
                 mhdr <- data.frame(paste0("OTHER FEDERAL OUTLAYS: 1940-", max_est_yr), stringsAsFactors = FALSE)
                 mhdr[2,] <-               "(percentage of GDP)"
@@ -278,7 +281,7 @@ shinyServer(
                 bvtopic <- bvall[bvall$topic == "Outlays",]
                 ingraph <- c("7","20","19","12","9","2","22","23")
             }
-            else if (input$topic == "Outlays3"){
+            else if (topic == "Outlays3"){
                 # Print outlays as a percent of GDP
                 mhdr <- data.frame(paste0("OTHER FEDERAL OUTLAYS: 1940-", max_est_yr), stringsAsFactors = FALSE)
                 mhdr[2,] <-               "(percentage of GDP)"
@@ -286,7 +289,7 @@ shinyServer(
                 bvtopic <- bvall[bvall$topic == "Outlays",]
                 ingraph <- c("1","14","17","5","8","3","22","23")
             }
-            else if (input$topic == "Outlays vs. Receipts"){
+            else if (topic == "Outlays vs. Receipts"){
                 # Print receipts as a percent of GDP
                 mhdr <- data.frame(paste0("FEDERAL RECEIPTS: 1940-", max_est_yr), stringsAsFactors = FALSE)
                 mhdr[2,] <-               "(percentage of GDP)"
@@ -294,7 +297,7 @@ shinyServer(
                 bvtopic <- bvall[bvall$topic == "Receipts",]
                 ingraph <- c("1","2","3","6","7","8","11")
             }
-            else if (input$topic == "Growth of Receipts, Outlays, GDP"){
+            else if (topic == "Growth of Receipts, Outlays, GDP"){
                 # Print receipts as a percent of GDP
                 mhdr <- data.frame(paste0("FEDERAL RECEIPTS: 1940-", max_est_yr), stringsAsFactors = FALSE)
                 mhdr[2,] <-               "(percentage of GDP)"
@@ -302,7 +305,7 @@ shinyServer(
                 bvtopic <- bvall[bvall$topic == "Receipts",]
                 ingraph <- c("1","2","3","6","7","8","11","14")
             }
-            else if (input$topic == "Receipts"){
+            else if (topic == "Receipts"){
                 # Print receipts as a percent of GDP
                 mhdr <- data.frame(paste0("FEDERAL RECEIPTS: 1940-", max_est_yr), stringsAsFactors = FALSE)
                 mhdr[2,] <-               "(percentage of GDP)"
@@ -329,14 +332,14 @@ shinyServer(
             adj = gdp$GDP
             dpz = 1
 
-            if (input$xunits == "Actual Dollars"){
+            if (xunits == "Actual Dollars"){
                 mhdr[2,] <-           "(billions of dollars)"
                 ylab = "Billions of Dollars"
                 num = 1
                 div = 1
                 adj = gdp$GDP
             }
-            else if (input$xunits == "Real Dollars")
+            else if (xunits == "Real Dollars")
             {
                 mhdr[2,] <-           "(billions of real dollars)"
                 chdr[1,ncol(chdr)] <- "Composite"
@@ -353,10 +356,10 @@ shinyServer(
                     yrs_earlier <- "year earlier)"
                 }
                 mhdr[1,] <- paste("GROWTH OF", mhdr[1,])
-                if (input$xunits == "Actual Dollars"){
+                if (xunits == "Actual Dollars"){
                     mhdr[2,] <- paste("(percent growth in dollars from", input$growth, yrs_earlier)
                 }
-                else if (input$xunits == "Real Dollars"){
+                else if (xunits == "Real Dollars"){
                     mhdr[2,] <- paste("(percent growth in real dollars from", input$growth, yrs_earlier)
                 }
                 else{
@@ -367,25 +370,25 @@ shinyServer(
             #Sys.setlocale(category = "LC_ALL", locale = "C")
             dp <- bvmatch$dp
             dp[length(dp)] <- dpz
-            if (input$topic == "Deficit"){
+            if (topic == "Deficit"){
                 tbl <- create_str_table(chdr, def[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
             }
-            else if (input$topic == "Outlays"){
+            else if (topic == "Outlays"){
                 tbl <- create_str_table(chdr, out[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
             }
-            else if (input$topic == "Outlays2"){
+            else if (topic == "Outlays2"){
                 tbl <- create_str_table(chdr, out[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
             }
-            else if (input$topic == "Outlays3"){
+            else if (topic == "Outlays3"){
                 tbl <- create_str_table(chdr, out[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
             }
-            else if (input$topic == "Outlays vs. Receipts"){
+            else if (topic == "Outlays vs. Receipts"){
                 tbl <- create_str_table(chdr, rec[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
             }
-            else if (input$topic == "Growth of Receipts, Outlays, GDP"){
+            else if (topic == "Growth of Receipts, Outlays, GDP"){
                 tbl <- create_str_table(chdr, rec[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
             }
-            else if (input$topic == "Receipts"){
+            else if (topic == "Receipts"){
                 tbl <- create_str_table(chdr, rec[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, input$growth)
             }
             else{
@@ -395,7 +398,7 @@ shinyServer(
             center_print(chdr[4,], mhdr[2,])
             print(tbl, print.gap = 1, row.names = FALSE)
             graphlist <- paste(input$graph, collapse=',')
-            parmlist <- URLencode(paste0("?topic=",input$topic,"&xunits=",input$xunits,"&output=",input$output,
+            parmlist <- URLencode(paste0("?topic=",topic,"&xunits=",xunits,"&output=",input$output,"&allx=",input$allx,
                                          "&xscale=",input$xscale,"&yscale=",input$yscale,"&growth=",input$growth,
                                          "&theme=",input$theme,"&color=",input$color,"&shape=",input$shape,
                                          "&graph=",graphlist,"&legendpad=",input$legendpad,"&year1=",input$year1,
@@ -405,7 +408,7 @@ shinyServer(
             cat(paste0(parmlist,"\n"))
             #cat(file = stderr(), paste0(parmlist,"\n"))
         })
-        #proc_topic <- observeEvent(input$topic, {
+        #proc_topic <- observeEvent(topic, {
         proc_topic <- observe({
             topic  <- input$topic
             xunits <- input$xunits

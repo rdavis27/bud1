@@ -439,6 +439,8 @@ shinyServer(
             xunits <- input$xunits
             year1  <- input$year1
             allx   <- input$allx
+            update_growth <- FALSE
+            update_xunits <- FALSE
 
             if (checkURL == 0){
                 query <<- parseQueryString(session$clientData$url_search)
@@ -474,17 +476,17 @@ shinyServer(
             }
 
             if (checkURL != 1){
-                update_growth <- FALSE
                 if (currentTopic == "Growth of Receipts, Outlays, GDP"){
                     if (topic != "Growth of Receipts, Outlays, GDP"){
                         #growth <- 0
                         xunits <- save_xunits
-                        update_growth <- TRUE
+                        update_xunits <- TRUE
                     }
                 }
                 maxyear <- as.numeric(year1)+10
                 yscale <- ""
                 growth <- 0
+                update_growth <- FALSE
                 if (allx) xscale <- paste0("1940,",maxyear,",10")
                 else xscale <- paste0("1970,",maxyear,",10")
                 if (topic == "Deficit"){
@@ -501,7 +503,6 @@ shinyServer(
                     }
                     color  <- "red,green2,green4,blue,orange2,purple,brown,cyan3"
                     shape  <- "15,16,17,18,11,9,7,8,0,1,2,5,6,3,4,96"
-                    
                 }
                 else if (topic == "Outlays2"){
                     varselect <<- c("7","20","19","12","9","2")
@@ -535,9 +536,9 @@ shinyServer(
                         growth <- 10
                         update_growth <- TRUE
                     }
-                    xunits <- xunits
                     if (xunits == "Percent of GDP"){
                         xunits <- "Real Dollars"
+                        update_xunits <- TRUE
                         if(allx) yscale <- "-40,160,20"
                         else     yscale <- "-40,100,20"
                     }
@@ -608,9 +609,14 @@ shinyServer(
                             update_growth <- TRUE
                             assign(names(query[i]), as.numeric(query[[i]]))
                         }
+                        else if (names(query[i]) == "xunits"){
+                            update_xunits <- TRUE
+                            assign(names(query[i]), as.character(query[[i]]))
+                        }
                         else if (names(query[i]) == "compareyr"){
                             assign(names(query[i]), as.logical(query[[i]]))
                         }
+                        # else handles graph, xscale, yscalse, color, and shape
                         else{
                             assign(names(query[i]), as.character(query[[i]]))
                         }
@@ -625,8 +631,19 @@ shinyServer(
                 updateTextInput(session, "yscale", label = NULL, value = yscale)
                 updateTextInput(session, "color",  label = NULL, value = color)
                 updateTextInput(session, "shape",  label = NULL, value = shape)
+                if (exists("year1")){
+                    updateCheckboxInput(session, "year1", label = NULL, value = year1)
+                }
+                if (exists("year2")){
+                    updateCheckboxInput(session, "year2", label = NULL, value = year2)
+                }
+                if (exists("allx")){
+                    updateCheckboxInput(session, "allx", label = NULL, value = allx)
+                }
                 if (update_growth){
                     updateNumericInput(session, "growth", label = NULL, value = growth)
+                }
+                if (update_xunits){
                     updateTextInput(session, "xunits", label = NULL, value = xunits)
                 }
                 if (exists("compareyr")){

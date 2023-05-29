@@ -32,6 +32,8 @@ shinyUI(fluidPage(
                     selected =   "theme_gray85"),
         textInput("color", "Color", value = ""),
         textInput("shape", "Shape", value = ""),
+        textInput("exclude", "Exclude index", value = ""), # add other and exclude logic
+        checkboxInput("addother", "Add other", value = FALSE),
         textInput("legendpad", "Legend Padding", value = " ") ),
     mainPanel(
         div(

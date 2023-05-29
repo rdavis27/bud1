@@ -503,7 +503,17 @@ shinyServer(
                     shape  <- "15,16,17,0,1,2"  # remove OASDI (18, 5)
                 }
                 else if (topic == "Outlays"){
-                    varselect <<- c("6","10","13","11","18","15","4","16")
+                    if (input$addother){ # add other and exclude logic
+                        varselect <<- c("6","10","13","11","18","15","4","21")
+                    }
+                    else{
+                        varselect <<- c("6","10","13","11","18","15","4","16")
+                    }
+                    vexclude <- unlist(strsplit(input$exclude, ","))
+                    if (input$exclude != ""){ # add other and exclude logic
+                        nexclude <- -as.numeric(vexclude)
+                        varselect <<- varselect[nexclude]
+                    }
                     if (xunits == "Percent of GDP"){
                         if (input$year1 < 2022){
                             if(allx) yscale <- "-1,14,1"
@@ -652,6 +662,7 @@ shinyServer(
                     }
                     checkURL <<- 4
                 }
+                zvarselect <<- varselect #DEBUG-RM
 
                 updateSelectInput(session, "graph", label = NULL,
                                   choices  = varchoice,

@@ -2,6 +2,7 @@ library(ggplot2)
 library(reshape)
 library(stringr)
 library(readxl)
+library(markdown)
 in_shinyapps <- FALSE # fileEncoding="latin1" if TRUE
 options(width = 200)
 options(max.print = 2000)
@@ -25,7 +26,7 @@ shinyServer(
             #cat(file=stderr(), "Locale =", Sys.getlocale(), "\n")
             Sys.setlocale(category = "LC_ALL", locale = "C")
             load_data()
-            if (input$compareyr){
+            if (input$compareyr & (input$year1 != input$year2)){
                 sources <- paste("FY", input$year1, "and", input$year2)
                 budgets <- "Budgets"
             }
@@ -179,6 +180,7 @@ shinyServer(
                                              "&graph=",graphlist,"&legendpad=",input$legendpad,"&year1=",input$year1,
                                              "&year2=",input$year2,"&compareyr=",input$compareyr))
                 cat(file = stderr(), paste0(parmlist,"\n"))
+                ann_adj <- 0.5 # annotation adjust for "Actual   Estimate"
                 gg <- ggplot(ggdf, aes(x=Year, y=value, group=variable)) +
                     geom_line(aes(color=variable), size=1, alpha=0.7) +
                     geom_point(aes(color=variable, shape=variable), size=3, alpha=0.7) +
@@ -186,7 +188,7 @@ shinyServer(
                     #theme(plot.title = element_text(hjust = 0.5)) +
                     xlab(xlab) + ylab(ylab) +
                     geom_vline(xintercept=min_est_yr-0.5) +
-                    annotate("text", x=min_est_yr, y=miny, label="Actual    Estimate") +
+                    annotate("text", x=min_est_yr+ann_adj, y=miny, label="Actual    Estimate") +
                     #coord_cartesian(xlim=c(xmin,xmax), ylim=c(ymin,ymax)) +
                     #expand_limits(y = 0) +
                     mytheme
@@ -491,15 +493,26 @@ shinyServer(
                 else xscale <- paste0("1970,",maxyear,",10")
                 if (topic == "Deficit"){
                     varselect <<- c("1","3","4") # remove OASDI (2)
-                    if (xunits == "Percent of GDP") yscale <- "-14,2,2"
+                    if (input$year1 < 2022){
+                        if (xunits == "Percent of GDP") yscale <- "-14,2,2"
+                    }
+                    else{
+                        if (xunits == "Percent of GDP") yscale <- "-20,8,4"
+                    }
                     color  <- "red,blue,green4" # remove OASDI (purple)
                     shape  <- "15,16,17,0,1,2"  # remove OASDI (18, 5)
                 }
                 else if (topic == "Outlays"){
                     varselect <<- c("6","10","13","11","18","15","4","16")
                     if (xunits == "Percent of GDP"){
-                        if(allx) yscale <- "-1,14,1"
-                        else     yscale <- "-1,8,1"
+                        if (input$year1 < 2022){
+                            if(allx) yscale <- "-1,14,1"
+                            else     yscale <- "-1,8,1"
+                        }
+                        else{
+                            if(allx) yscale <- "-2,14,2"
+                            else     yscale <- "-1,9,1"
+                        }
                     }
                     color  <- "red,green2,green4,blue,orange2,purple,brown,cyan3"
                     shape  <- "15,16,17,18,11,9,7,8,0,1,2,5,6,3,4,96"
@@ -508,7 +521,7 @@ shinyServer(
                     varselect <<- c("7","20","19","12","9","2")
                     if (xunits == "Percent of GDP"){
                         if(allx) yscale <- "0,3.1,0.5"
-                        else     yscale <- "0,1.2,0.1"
+                        else     yscale <- "0,1.6,0.2"
                     }
                     color  <- "red,green4,blue,orange2,purple,black"
                     shape  <- "15,16,17,18,9,7,0,1,2,5,3,4"
@@ -516,15 +529,26 @@ shinyServer(
                 else if (topic == "Outlays3"){
                     varselect <<- c("1","14","17","5","8","3")
                     if (xunits == "Percent of GDP"){
-                        if(allx) yscale <- "-0.2,1,0.1"
-                        else     yscale <- "-0.2,0.52,0.1"
+                        if (input$year1 < 2022){
+                            if(allx) yscale <- "-0.2,1,0.1"
+                            else     yscale <- "-0.2,0.52,0.1"
+                        }
+                        else{
+                            if(allx) yscale <- "-0.2,1,0.2"
+                            else     yscale <- "-0.2,0.52,0.1"
+                        }
                     }
                     color  <- "red,green4,blue,orange2,purple,black"
                     shape  <- "15,16,17,18,9,7,0,1,2,5,3,4"
                 }
                 else if (topic == "Outlays vs. Receipts"){
                     varselect <<- c("11","8")
-                    if (xunits == "Percent of GDP") yscale <- "14,24,1"
+                    if (input$year1 < 2022){
+                        if (xunits == "Percent of GDP") yscale <- "14,24,1"
+                    }
+                    else{
+                        if (xunits == "Percent of GDP") yscale <- "14,34,2"
+                    }
                     if (!allx) xscale <- paste0("1950,",maxyear,",10")
                     color  <- "red,blue"
                     shape  <- "15,16,0,1"
@@ -547,7 +571,7 @@ shinyServer(
                         else     yscale <- "-40,100,20"
                     }
                     if (allx) xscale <- paste0("1950,",maxyear,",10")
-                    color  <- "2,4,orange2,3,1"
+                    color  <- "red,blue,orange2,green4,black"
                     shape  <- "16,17,18,8,15,1,2,5,3,0"
                 }
                 else if (topic == "Receipts"){
@@ -558,7 +582,12 @@ shinyServer(
                 }
                 else {
                     varselect <<- c("1","2","3")
-                    if (xunits == "Percent of GDP") yscale <- "0,120,10"
+                    if (input$year1 < 2022){
+                        if (xunits == "Percent of GDP") yscale <- "0,120,10"
+                    }
+                    else{
+                        if (xunits == "Percent of GDP") yscale <- "0,140,20"
+                    }
                     color  <- "red,green4,blue"
                     shape  <- "15,16,17,0,1,2"
                 }

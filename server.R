@@ -53,6 +53,10 @@ shinyServer(
                 main = paste("Other Federal Outlays from", sources, budgets)
                 xlab = paste0("Source: U.S. Budget, ", sources, ", Historical Tables 1.1, 3.1, 10.1")
             }
+            else if (topic == "Outlays by BEA"){
+                main = paste("Outlays by Budget Enforcement Act Category from", sources, budgets)
+                xlab = paste0("Source: U.S. Budget, ", sources, ", Historical Tables 8.1, 10.1")
+            }
             else if (topic == "Outlays vs. Receipts"){
                 main = paste("Federal Outlays and Receipts from", sources, budgets)
                 xlab = paste0("Source: U.S. Budget, ", sources, ", Historical Tables 1.1, 10.1")
@@ -108,6 +112,10 @@ shinyServer(
             else if (topic == "Outlays3"){
                 df <- out
                 if (input$compareyr) df2 <- out2
+            }
+            else if (topic == "Outlays by BEA"){
+                df <- outbea
+                if (input$compareyr) df2 <- outbea2
             }
             else if (topic == "Outlays vs. Receipts"){
                 df <- rec
@@ -291,6 +299,14 @@ shinyServer(
                 bvtopic <- bvall[bvall$topic == "Outlays",]
                 ingraph <- c("1","14","17","5","8","3","22","23")
             }
+            else if (topic == "Outlays by BEA"){
+                # Print outlays as a percent of GDP
+                mhdr <- data.frame(paste0("OUTLAYS BY BUDGET ENFORCEMENT ACT CATEGORY: U.S. BUDGET, FY"), stringsAsFactors = FALSE)
+                mhdr[2,] <-               "(percentage of GDP)"
+                colnames(mhdr) <- " "
+                bvtopic <- bvall[bvall$topic == "OutlaysBEA",]
+                ingraph <- c("3","4","8","9","10","11","12","13","14")
+            }
             else if (topic == "Outlays vs. Receipts"){
                 # Print receipts as a percent of GDP
                 mhdr <- data.frame(paste0("FEDERAL RECEIPTS: U.S. BUDGET, FY"), stringsAsFactors = FALSE)
@@ -395,6 +411,10 @@ shinyServer(
                 df <- out
                 if (input$compareyr) df2 <- out2
             }
+            else if (topic == "Outlays by BEA"){
+                df <- outbea
+                if (input$compareyr) df2 <- outbea2
+            }
             else if (topic == "Outlays vs. Receipts"){
                 df <- rec
                 if (input$compareyr) df2 <- rec2
@@ -412,6 +432,9 @@ shinyServer(
                 if (input$compareyr) df2 <- debt2
             }
             tbl <- create_str_table(chdr, df[,c(0,as.numeric(ingraph))+1], dp, num, div, adj, min_est, max_est, input$growth)
+            if (topic == "Outlays by BEA"){
+                tbl <- tbl[c(1:4,27:NROW(tbl)),]
+            }
             center_print(chdr[4,], paste(mhdr[1,], input$year1))
             center_print(chdr[4,], mhdr[2,])
             print(tbl, print.gap = 1, row.names = FALSE)
@@ -551,6 +574,12 @@ shinyServer(
                     color  <- "red,green4,blue,orange2,purple,black"
                     shape  <- "15,16,17,18,9,7,0,1,2,5,3,4"
                 }
+                else if (topic == "Outlays by BEA"){
+                    varselect <<- c("3","4","8","9","10","11","12","13","14")
+                    if (allx) xscale <- paste0("1960,",maxyear,",10")
+                    color  <- "red,green4,blue,purple,brown,orange2,deepskyblue,deeppink,black"
+                    shape  <- "15,16,17,18,0,1,2,3,5"
+                }
                 else if (topic == "Outlays vs. Receipts"){
                     varselect <<- c("11","8")
                     if (input$year1 < 2022){
@@ -612,6 +641,9 @@ shinyServer(
                 }
                 else if (topic == "Outlays3"){
                     bvtop <- "Outlays"
+                }
+                else if (topic == "Outlays by BEA"){
+                    bvtop <- "OutlaysBEA"
                 }
                 else if (topic == "Outlays vs. Receipts"){
                     bvtop <- "Receipts"
@@ -713,6 +745,7 @@ shinyServer(
             if (!exists("def$MedicSurp")) load_debt()
             if (!exists("ss$SMI_BAL")) load_debt()
             if (!exists("out$Receipts")) load_outlays()
+            if (!exists("outbea$Receipts")) load_outlays_bea()
             if (!exists("rec$Outlays")) load_receipts()
             return(gdp)
         }
@@ -810,6 +843,45 @@ shinyServer(
                 max_est_yr2 <<- max_est_yr
             }
             load_outlaysn(input$year1, xls_ext, "")
+        }
+        load_outlaysn_bea <- function(year, ext, suffix){
+            #print("========== load_outlays_bea ==========")
+            if (!exists("gdp")) load_gdp()
+            if (!exists("def")) load_debt()
+            outbea_names <- c("Year",
+                           "Outlays2", "Discretionary2", "Defense2", "Non-defense2", "Mand_Int2", "Mandatory2", "Programmatic2",
+                           "Soc_Sec2", "Medicare2", "Medicaid2", "Other_Means2", "Other_Prog2", "Offs_Rec2", "Net_Int2")
+            t8  <- load_table(paste0(year,"/hist08z1.",ext), 5, 0) # skip to 1-line header, then start at 1962
+            outbea <<- create_num_table(t8, c(1:15), outbea_names, 1000)
+            Year <- seq(1940,1961)
+            outbea40 <- data.frame(Year)
+            for (i in 2:length(outbea_names)){
+                outbea40[[outbea_names[i]]] <- NA
+                outbea[[outbea_names[i]]] <- outbea[[outbea_names[i]]] * 1000
+            }
+            outbea <<- rbind(outbea40, outbea)
+            if (suffix == "2"){
+                outbea$Receipts2 <<- def2$Receipts[NROW(def2)]
+                outbea$GDP2      <<- gdp2$GDP[NROW(gdp2)]
+                outbea[1:(min_est2-1),] <<- NA
+            }
+            else{
+                outbea$Receipts2 <<- def$Receipts[NROW(def)]
+                outbea$GDP2      <<- gdp$GDP[NROW(gdp)]
+            }
+            colnames(outbea)   <<- gsub("2", suffix, colnames(outbea))
+            return(outbea)
+        }
+        load_outlays_bea <- function(){
+            if (input$compareyr){
+                load_outlaysn_bea(input$year2, xls_ext2, "2")
+                outbea2 <<- outbea
+                min_est2    <<- min_est
+                max_est2    <<- max_est
+                min_est_yr2 <<- min_est_yr
+                max_est_yr2 <<- max_est_yr
+            }
+            load_outlaysn_bea(input$year1, xls_ext, "")
         }
         load_receiptsn <- function(year, ext, suffix){
             #print("========== load_receiptsn ==========")

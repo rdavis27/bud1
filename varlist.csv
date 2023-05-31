@@ -45,6 +45,22 @@ out,Outlays,Outlays,Outlays,,22,,97,3,,Total,Outlays,--------
 out,Outlays,Receipts,Receipts,,23,,98,3,,Total,Receipts,--------
 gdp,Outlays,GDP,GDP,,24,,89,1,,,GDP,---------
 gdp,Outlays,GDP,GDP,,99,,89,1,,GDP,($bil),---------
+outbea,OutlaysBEA,Year,Year ,,0,,0,0,,,Year ,---- 
+outbea,OutlaysBEA,Outlays,Outlays,,1,,1,1,,Total,Outlays,--------
+outbea,OutlaysBEA,Discretionary,Discretionary,,2,,2,1,,Total,Discret,--------
+outbea,OutlaysBEA,Defense,Defense,,3,,3,1,,National,Defense,--------
+outbea,OutlaysBEA,Non-defense,Non-defense Disc.,,4,,4,1,,Non-,Defense,--------
+outbea,OutlaysBEA,Mand_Int,Mand & Interest,,5,,5,1,Mandatory,and,Interest,--------
+outbea,OutlaysBEA,Mandatory,Mandatory,,6,,6,1,,Total,Mandatory,---------
+outbea,OutlaysBEA,Programmatic,Programmatic,,7,,7,1,Total,Program-,matic,--------
+outbea,OutlaysBEA,Soc_Sec,Social Security,,8,,8,1,,Social,Security,--------
+outbea,OutlaysBEA,Medicare,Medicare,,9,,9,1,,,Medicare,--------
+outbea,OutlaysBEA,Medicaid,Medicaid,,10,,10,1,,,Medicaid,--------
+outbea,OutlaysBEA,Other_Means,Other Means-tested,,11,,11,1,Other,Means-,Tested,--------
+outbea,OutlaysBEA,Other_Prog,Other Programmatic,,12,,12,1,Other,Program-,matic,--------
+outbea,OutlaysBEA,Offs_Rec,Offsetting Receipts,,13,,13,1,Undist.,Offsetng,Receipts,--------
+outbea,OutlaysBEA,Net_Int,Net Interest,,14,,14,1,,Net,Interest,--------
+gdp,OutlaysBEA,GDP,GDP,,99,,89,1,,GDP,($bil),---------
 ,Receipts,Year,Year ,,0,,0,0,,,Year ,---- 
 ,Receipts,Individual,Individual Income,,1,,1,1,,Individ,Income,--------
 ,Receipts,Corporate,Corporate Income,,2,,2,1,,Corporate,Income,--------

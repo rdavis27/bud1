@@ -14,7 +14,8 @@ shinyUI(fluidPage(
             column(6, style='padding:1px', numericInput("year2", "Year", 2023, min = 2017, max = 2024, width = "80%"))
         ),
         selectInput("topic", "Topic",
-                    choices  = c("Debt", "Deficit", "Receipts", "Outlays", "Outlays2", "Outlays3", "Outlays vs. Receipts","Growth of Receipts, Outlays, GDP"),
+                    choices  = c("Debt", "Deficit", "Receipts", "Outlays", "Outlays2", "Outlays3", "Outlays by BEA",
+                                 "Outlays vs. Receipts","Growth of Receipts, Outlays, GDP"),
                     selected =   "Debt"),
         selectInput("xunits", "Units",
                     choices  = c("Actual Dollars","Real Dollars","Percent of GDP"),

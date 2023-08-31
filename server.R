@@ -745,7 +745,9 @@ shinyServer(
             if (!exists("def$MedicSurp")) load_debt()
             if (!exists("ss$SMI_BAL")) load_debt()
             if (!exists("out$Receipts")) load_outlays()
-            if (!exists("outbea$Receipts")) load_outlays_bea()
+            if (input$year1 >= 2021 & (input$year2 >= 2021 | !input$compareyr)){
+                if (!exists("outbea$Receipts")) load_outlays_bea()
+            }
             if (!exists("rec$Outlays")) load_receipts()
             return(gdp)
         }
